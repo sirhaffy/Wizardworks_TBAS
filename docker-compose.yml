@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  mongodb:
+    container_name: tbas_mongodb
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    env_file:
+      - ./Frontend/.env
+    volumes:
+      - mongodb_tbas_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    command: mongod --auth
+
+volumes:
+  mongodb_tbas_data:
+    name: tbas_mongodb_data
