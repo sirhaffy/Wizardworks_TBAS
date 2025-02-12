@@ -5,6 +5,11 @@ namespace Backend.Models;
 
 public class Rectangle
 {
-    public ObjectId Id { get; set; }
-    public string Color { get; set; }
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string? Id { get; set; }
+
+    public string Color { get; set; } = string.Empty;
+    public int X { get; set; }
+    public int Y { get; set; }
 }

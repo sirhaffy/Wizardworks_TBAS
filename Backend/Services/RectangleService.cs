@@ -1,4 +1,5 @@
-﻿using Backend.Models;
+﻿using Backend.Interfaces;
+using Backend.Models;
 using MongoDB.Driver;
 
 namespace Backend.Services;

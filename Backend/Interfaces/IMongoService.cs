@@ -1,6 +1,6 @@
 ﻿using MongoDB.Driver;
 
-namespace Backend.Services;
+namespace Backend.Interfaces;
 
 public interface IMongoService
 {

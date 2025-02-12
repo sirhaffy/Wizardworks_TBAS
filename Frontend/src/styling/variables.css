@@ -1,0 +1,11 @@
+﻿/* variables */
+:root {
+    --max-width: 1280px;
+    --text-color: #fafafa;
+    --background-color: #242424;
+    --accent-color: #9d64ff;
+    --accent-color-hover: #9d64ff;
+    --button-background-color: #1a1a1a;
+    --rectangle-size: 3rem;
+    --rectangle-border-radius: 0.125rem;
+}

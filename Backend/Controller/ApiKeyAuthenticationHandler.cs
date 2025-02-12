@@ -5,6 +5,8 @@ using Microsoft.Extensions.Options;
 
 namespace Backend.Controller;
 
+// TODO: Add connections logs.
+
 public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
     private const string ApiKeyHeaderName = "X-API-Key";

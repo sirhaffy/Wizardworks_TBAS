@@ -90,3 +90,7 @@ import secrets
 api_key = secrets.token_urlsafe(32)
 print(api_key)
 ```
+Failed to create rectangle. Please try again.
+Rectangles
+
+Failed to fetch rectangles. Please try again later.

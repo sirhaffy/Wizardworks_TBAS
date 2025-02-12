@@ -1,46 +1,90 @@
-﻿import React, { useState } from 'react';
+﻿import React, {useEffect, useState} from 'react';
 import { apiFetch } from './utils/api';
 
-const CreateRectangle = ({ onRectangleCreated  }) => {
-    const [success, setSuccess] = useState(false);
-    const [error, setError] = useState('');
+const CreateRectangle = ({ onRectangleCreated }) => {
+    
+    // States for tracking success and error messages
+    const [addSuccess, setAddSuccess] = useState(false);
+    const [addError, setAddError] = useState('');
+    const [clearSuccess, setClearSuccess] = useState(false);
+    const [clearError, setClearError] = useState('');
 
+    // Log messages in development mode when states change.
+    useEffect(() => {
+        if (process.env.NODE_ENV === 'development') {
+            if (addSuccess) console.log('New rectangle added successfully!');
+            if (clearSuccess) console.log('All rectangles cleared successfully!');
+            if (addError) console.error(addError);
+            if (clearError) console.error(clearError);
+        }
+    }, [addSuccess, clearSuccess, addError, clearError]);
+    
+    // Handle form submission to create a new rectangle.
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setSuccess(false);
-        setError('');
 
-        const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
+        // Reset all status messages
+        setAddSuccess(false);
+        setAddError('');
+        setClearSuccess(false);
+        setClearError('');
 
         try {
-            await apiFetch('/rectangle', 'POST', { color: randomColor });
-            onRectangleCreated(); // Anropa callback
-            setSuccess(true);
+            // Fetch existing rectangles from the API
+            const rectangles = await apiFetch('/rectangle');
+            let position;
+
+            if (rectangles.length === 0) {
+                position = { x: 0, y: 0 }; // Staring position.
+            } else {
+                let n = Math.floor(Math.sqrt(rectangles.length)); // Determine current square size.
+                let step = rectangles.length - n * n; // Find the next position within the square.
+
+                if (step < n) {
+                    position = { x: n, y: step }; // Expand to the right.
+                } else {
+                    position = { x: n - (step - n), y: n }; // Expand downward and to the left.
+                }
+            }
+
+            const rectangleData = {
+                color: '#' + Math.floor(Math.random() * 11184810 + 5592405).toString(16), // Random color, avoid dark.
+                x: position.x,
+                y: position.y
+            };
+
+            // Send the new rectangle data to the API.
+            await apiFetch('/rectangle', 'POST', rectangleData);
+            onRectangleCreated();
+            setAddSuccess(true);
         } catch (err) {
-            setError('Failed to create rectangle. Please try again.');
+            setAddError('Failed to create rectangle. Please try again.');
         }
     };
 
+    // Handle clearing all rectangles
     const handleClear = async () => {
+        // Reset all status messages
+        setAddSuccess(false);
+        setAddError('');
+        setClearSuccess(false);
+        setClearError('');
+
         try {
             await apiFetch('/rectangle', 'DELETE');
-            onRectangleCreated(); // Anropa callback
-            setSuccess(true);
-            setError('');
+            onRectangleCreated();
+            setClearSuccess(true);
         } catch (err) {
-            setError('Failed to clear rectangles. Please try again.');
+            setClearError('Failed to clear rectangles. Please try again.'); 
         }
     };
 
     return (
-        <div className="create-rectangle">
-            <h2>Create Rectangle</h2>
-            <form onSubmit={handleSubmit}>
-                <button type="submit">Create Random Rectangle</button>
-                <button type="button" onClick={handleClear}>Clear All Rectangles</button>
+        <div className="rectangle-controls-container">
+            <form onSubmit={handleSubmit} className="rectangle-controls">
+                <button type="submit">Add square</button>
+                <button type="button" onClick={handleClear}>Clear</button>
             </form>
-            {success && <p className="success-message">Rectangle created successfully!</p>}
-            {error && <p className="error-message">{error}</p>}
         </div>
     );
 };
