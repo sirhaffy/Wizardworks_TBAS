@@ -52,10 +52,6 @@
         groups: docker
         append: yes
 
-    - name: Debug VM_IP
-      debug:
-        msg: "VM_IP is {{ lookup('env', 'VM_IP') }}"
-
     - name: Create necessary directories
       file:
         path: "{{ item }}"
@@ -67,14 +63,6 @@
         - /app
         - /app/Backend
         - /app/Frontend
-
-    - name: Debug current directory structure
-      command: pwd
-      register: current_dir
-
-    - name: Show current directory
-      debug:
-        var: current_dir.stdout_lines
 
     - name: Copy docker-compose files
       copy:
@@ -113,6 +101,18 @@
         - { src: '../../Frontend/.env-frontend', dest: '/app/Frontend/.env-frontend' }
       ignore_errors: yes
 
+    - name: Update paths in docker-compose.yml
+      replace:
+        path: /app/docker-compose.yml
+        regexp: "{{ item.old }}"
+        replace: "{{ item.new }}"
+      with_items:
+        - { old: '../Backend/.env-backend', new: './Backend/.env-backend' }
+        - { old: '../Frontend/.env-frontend', new: './Frontend/.env-frontend' }
+        - { old: '../Backend', new: './Backend' }
+        - { old: '../Frontend', new: './Frontend' }
+        - { old: 'version: ''3.8''', new: '' }
+
     - name: Verify Docker Compose installation
       command: docker compose version
       register: compose_version
@@ -129,6 +129,14 @@
     - name: Show docker-compose.yml status
       debug:
         msg: "docker-compose.yml exists: {{ compose_file.stat.exists }}"
+
+    - name: Cat docker-compose.yml content
+      command: cat /app/docker-compose.yml
+      register: compose_content
+
+    - name: Show docker-compose.yml content
+      debug:
+        var: compose_content.stdout_lines
 
     - name: Start Docker Compose
       community.docker.docker_compose_v2:
