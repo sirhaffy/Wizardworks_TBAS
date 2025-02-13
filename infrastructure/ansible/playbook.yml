@@ -3,30 +3,15 @@
   hosts: app_server
   become: yes
   tasks:
-    - name: Install required packages
+    - name: Install Docker
       apt:
-        name:
-          - docker.io
-          - docker-compose-plugin
+        name: ['docker.io', 'docker-compose-plugin']
         state: present
         update_cache: yes
 
-    - name: Start Docker service
-      service:
-        name: docker
-        state: started
-        enabled: yes
-
-    - name: Create app directory
-      file:
-        path: /app
-        state: directory
-        owner: azureuser
-        group: azureuser
-
     - name: Copy application files
       copy:
-        src: ../../
+        src: ./
         dest: /app/
         owner: azureuser
         group: azureuser
@@ -34,6 +19,5 @@
     - name: Start Docker Compose
       community.docker.docker_compose_v2:
         project_src: /app
-        files:
-          - docker-compose.yml
+        files: [docker-compose.yml]
         state: present
