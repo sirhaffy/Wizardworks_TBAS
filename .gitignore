@@ -2,8 +2,6 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=rider,visualstudio,react,visualstudiocode
 
 # Extra
-.env
-appsettings.json
 
 ### react ###
 .DS_*
