@@ -40,7 +40,7 @@
         group: azureuser
 
     - name: Start Docker Compose
-      community.docker.docker_compose:
+      community.docker.docker_compose_v2:
         project_src: /app
         files:
           - docker-compose.yml
