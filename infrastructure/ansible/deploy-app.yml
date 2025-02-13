@@ -1,0 +1,24 @@
+﻿---
+- name: Deploy Application
+  hosts: app_server
+  become: yes
+  tasks:
+    - name: Create app directory
+      file:
+        path: /app
+        state: directory
+        owner: azureuser
+        group: azureuser
+
+    - name: Copy application files
+      copy:
+        src: ./
+        dest: /app/
+        owner: azureuser
+        group: azureuser
+
+    - name: Start Docker Compose
+      community.docker.docker_compose_v2:
+        project_src: /app
+        files: [docker-compose.yml]
+        state: present
