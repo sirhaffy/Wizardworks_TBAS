@@ -69,12 +69,21 @@ jobs:
           # Importera virtual network
           terraform import azurerm_virtual_network.main /subscriptions/831a771a-003a-4263-b2cf-fe3ef338dbca/resourceGroups/app-rg/providers/Microsoft.Network/virtualNetworks/app-rg-vnet || true
 
+          # Importera subnet
+          terraform import azurerm_subnet.main /subscriptions/831a771a-003a-4263-b2cf-fe3ef338dbca/resourceGroups/app-rg/providers/Microsoft.Network/virtualNetworks/app-rg-vnet/subnets/internal || true
+
           # Importera public IP
           terraform import azurerm_public_ip.main /subscriptions/831a771a-003a-4263-b2cf-fe3ef338dbca/resourceGroups/app-rg/providers/Microsoft.Network/publicIPAddresses/app-rg-ip || true
 
           # Importera network security group
           terraform import azurerm_network_security_group.main /subscriptions/831a771a-003a-4263-b2cf-fe3ef338dbca/resourceGroups/app-rg/providers/Microsoft.Network/networkSecurityGroups/app-rg-nsg || true
 
+          # Importera network interface
+          terraform import azurerm_network_interface.main /subscriptions/831a771a-003a-4263-b2cf-fe3ef338dbca/resourceGroups/app-rg/providers/Microsoft.Network/networkInterfaces/app-rg-nic || true
+    
+          # Importera OS disk
+          terraform import azurerm_managed_disk.os_disk /subscriptions/831a771a-003a-4263-b2cf-fe3ef338dbca/resourceGroups/app-rg/providers/Microsoft.Compute/disks/app-rg-vm_OsDisk_1_0363f7f873a744c681caf2bf84a7ad4f || true
+    
           terraform apply -auto-approve
 
   deploy:
