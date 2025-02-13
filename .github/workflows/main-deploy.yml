@@ -69,7 +69,6 @@ jobs:
           terraform import azurerm_network_security_group.main /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/app-rg/providers/Microsoft.Network/networkSecurityGroups/app-rg-nsg || true
           terraform import azurerm_network_interface.main /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/app-rg/providers/Microsoft.Network/networkInterfaces/app-rg-nic || true
           terraform import azurerm_linux_virtual_machine.main /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/app-rg/providers/Microsoft.Compute/virtualMachines/app-rg-vm || true
-#          terraform import azurerm_managed_disk.os_disk /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/app-rg/providers/Microsoft.Compute/disks/app-rg-vm_OsDisk_1_0363f7f873a744c681caf2bf84a7ad4f || true
           terraform apply -auto-approve
 
   deploy:
