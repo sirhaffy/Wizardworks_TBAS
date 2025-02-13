@@ -9,11 +9,20 @@
         state: directory
         owner: azureuser
         group: azureuser
+        mode: '0755'
 
     - name: Copy application files
       copy:
         src: ./
         dest: /app/
+        owner: azureuser
+        group: azureuser
+        mode: preserve
+
+    - name: Ensure .env file permissions
+      file:
+        path: /app/.env
+        mode: '0600'
         owner: azureuser
         group: azureuser
 
