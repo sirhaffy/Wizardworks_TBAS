@@ -6,8 +6,7 @@ services:
     image: mongo:latest
     ports:
       - "27017:27017"
-#    env_file:
-#      - ../Frontend/.env-frontend
+
     volumes:
       - mongodb_tbas_data:/data/db
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
