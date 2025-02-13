@@ -62,7 +62,19 @@ jobs:
         working-directory: infrastructure/terraform
         run: |
           terraform init
+
+          # Importera resource group
           terraform import azurerm_resource_group.main /subscriptions/831a771a-003a-4263-b2cf-fe3ef338dbca/resourceGroups/app-rg || true
+
+          # Importera virtual network
+          terraform import azurerm_virtual_network.main /subscriptions/831a771a-003a-4263-b2cf-fe3ef338dbca/resourceGroups/app-rg/providers/Microsoft.Network/virtualNetworks/app-rg-vnet || true
+
+          # Importera public IP
+          terraform import azurerm_public_ip.main /subscriptions/831a771a-003a-4263-b2cf-fe3ef338dbca/resourceGroups/app-rg/providers/Microsoft.Network/publicIPAddresses/app-rg-ip || true
+
+          # Importera network security group
+          terraform import azurerm_network_security_group.main /subscriptions/831a771a-003a-4263-b2cf-fe3ef338dbca/resourceGroups/app-rg/providers/Microsoft.Network/networkSecurityGroups/app-rg-nsg || true
+
           terraform apply -auto-approve
 
   deploy:
