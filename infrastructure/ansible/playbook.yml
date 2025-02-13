@@ -41,15 +41,6 @@
         state: started
         enabled: yes
 
-    - name: Debug Docker service status
-      command: systemctl status docker
-      register: docker_status
-      ignore_errors: yes
-
-    - name: Show Docker service status
-      debug:
-        var: docker_status.stdout_lines
-
     - name: Create docker group if it doesn't exist
       group:
         name: docker
@@ -65,31 +56,79 @@
       debug:
         msg: "VM_IP is {{ lookup('env', 'VM_IP') }}"
 
-    - name: Create app directory
+    - name: Create necessary directories
       file:
-        path: /app
+        path: "{{ item }}"
         state: directory
-
-    - name: Copy application files
-      copy:
-        src: ./
-        dest: /app/
-
-    - name: Set correct permissions
-      file:
-        path: /app
-        recurse: yes
         owner: azureuser
         group: azureuser
+        mode: '0755'
+      with_items:
+        - /app
+        - /app/Backend
+        - /app/Frontend
+
+    - name: Debug current directory structure
+      command: pwd
+      register: current_dir
+
+    - name: Show current directory
+      debug:
+        var: current_dir.stdout_lines
+
+    - name: Copy docker-compose files
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: azureuser
+        group: azureuser
+        mode: '0644'
+      with_items:
+        - { src: '../../docker-compose.yml', dest: '/app/docker-compose.yml' }
+        - { src: '../../mongo-init.js', dest: '/app/mongo-init.js' }
+
+    - name: Copy Backend files
+      copy:
+        src: ../../Backend/
+        dest: /app/Backend/
+        owner: azureuser
+        group: azureuser
+
+    - name: Copy Frontend files
+      copy:
+        src: ../../Frontend/
+        dest: /app/Frontend/
+        owner: azureuser
+        group: azureuser
+
+    - name: Copy environment files if they exist
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: azureuser
+        group: azureuser
+        mode: '0644'
+      with_items:
+        - { src: '../../Backend/.env-backend', dest: '/app/Backend/.env-backend' }
+        - { src: '../../Frontend/.env-frontend', dest: '/app/Frontend/.env-frontend' }
+      ignore_errors: yes
 
     - name: Verify Docker Compose installation
       command: docker compose version
       register: compose_version
-      ignore_errors: yes
 
     - name: Show Docker Compose version
       debug:
         var: compose_version.stdout_lines
+
+    - name: Verify docker-compose.yml exists
+      stat:
+        path: /app/docker-compose.yml
+      register: compose_file
+
+    - name: Show docker-compose.yml status
+      debug:
+        msg: "docker-compose.yml exists: {{ compose_file.stat.exists }}"
 
     - name: Start Docker Compose
       community.docker.docker_compose_v2:
