@@ -17,6 +17,10 @@
         state: started
         enabled: yes
 
+    - name: Debug VM_IP
+      debug:
+        msg: "VM_IP is {{ lookup('env', 'VM_IP') }}"
+
     - name: Create app directory
       file:
         path: /app
