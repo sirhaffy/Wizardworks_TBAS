@@ -1,9 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
 @import "./variables.css";
+@import "./effects.css";
 
 :root {
-
-
   max-width: var(--max-width);
   margin: 0 auto;
   text-align: center;
@@ -27,7 +26,6 @@ body {
   background-color: var(--background-color);
 }
 
-
 a {
   font-weight: 500;
   color: var(--accent-color);
@@ -38,9 +36,34 @@ a {
   }
 }
 
+h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--header-color);
+}
+
+h2 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--header-color);
+}
+
+
+@keyframes buttonPress {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
+  border-radius: var(--button-border-radius);
+  border: 0.125rem solid transparent;
   padding: 0.6em 1.2em;
   font-size: 1em;
   font-weight: 500;
@@ -48,17 +71,19 @@ button {
   color: var(--text-color);
   background-color: var(--button-background-color);
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: border-color 250ms ease, color 250ms ease;
 
   &:hover {
     border-color: var(--accent-color);
+    color: var(--accent-color);
   }
 
-  &:focus,
-  &:focus-visible {
-    outline: 4px auto -webkit-focus-ring-color;
+  /* Add this class dynamically */
+  &.animate-press {
+    animation: buttonPress 100ms linear;
   }
 }
+
 
 /* Main wrapper */
 .app-container {
@@ -104,3 +129,7 @@ button {
   }
   
 }
+
+
+
+

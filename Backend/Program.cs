@@ -2,6 +2,7 @@ using Backend.Controller;
 using Backend.Interfaces;
 using Backend.Services;
 using Microsoft.AspNetCore.Authentication;
+using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +10,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddLogging();
+
+// Read environment variables from .env file
+Env.Load(".env-backend");
 
 // CORS
 var allowedOrigins = builder.Configuration["AllowedOrigins"]; // Läser värdet från appsettings.json

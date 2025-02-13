@@ -33,7 +33,7 @@ In solution root (where the docker-compose.yml file exists), run.
 
 Start docker-compose:
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 # GitHub Actions CI/CD

@@ -2,6 +2,10 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const API_KEY = import.meta.env.VITE_API_KEY;
 
+// TODO: Add a check to see if anything is recieved from the API, when docker is not started there should be an error.
+// TODO: Add an <ErrorBoundary> component to catch errors in the API request and display a user-friendly error message,
+// TODO: and wrap the <App> component in it to handle any errors that occur during rendering.
+
 // Define an asynchronous function for making API requests
 export const apiFetch = async (endpoint, method = "GET", body = null) => {
     try {
@@ -29,7 +33,10 @@ export const apiFetch = async (endpoint, method = "GET", body = null) => {
 
         // Get the response text
         const text = await response.text();
-
+        
+        // TODO: Remove, just for testing.
+        console.log("response", response);
+        
         // Check if the response is not OK (status code outside 200-299 range)
         if (!response.ok) {
             throw new Error(`API request failed: ${response.status} ${response.statusText}`);

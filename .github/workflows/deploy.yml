@@ -1,0 +1,45 @@
+name: Deploy Infrastructure and Application
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  BACKEND_ENV: ${{ secrets.BACKEND_ENV }}
+  FRONTEND_ENV: ${{ secrets.FRONTEND_ENV }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+
+      - name: Create env files
+        run: |
+          echo "$BACKEND_ENV" > Backend/.env
+          echo "$FRONTEND_ENV" > Frontend/.env
+
+      - name: Setup Ansible
+        run: |
+          sudo apt-add-repository --yes --update ppa:ansible/ansible
+          sudo apt install ansible
+
+      - name: Run Ansible Playbook
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key
+          chmod 600 ssh_key
+          ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.yml playbook.yml --private-key=ssh_key

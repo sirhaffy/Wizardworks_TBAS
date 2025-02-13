@@ -1,5 +1,6 @@
 ﻿import React, {useEffect, useState} from 'react';
 import { apiFetch } from './utils/api';
+import AnimatedButton from "./components/AnimatedButton.jsx";
 
 const CreateRectangle = ({ onRectangleCreated }) => {
     
@@ -82,8 +83,8 @@ const CreateRectangle = ({ onRectangleCreated }) => {
     return (
         <div className="rectangle-controls-container">
             <form onSubmit={handleSubmit} className="rectangle-controls">
-                <button type="submit">Add square</button>
-                <button type="button" onClick={handleClear}>Clear</button>
+                <AnimatedButton type="submit">Add square</AnimatedButton>
+                <AnimatedButton type="button" onClick={handleClear}>Clear</AnimatedButton>
             </form>
         </div>
     );

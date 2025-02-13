@@ -1,0 +1,42 @@
+﻿---
+- name: Configure application server
+  hosts: app_server
+  become: yes
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - docker.io
+          - docker-compose
+        state: present
+        update_cache: yes
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Create app directory
+      file:
+        path: /app
+        state: directory
+
+    - name: Copy application files
+      copy:
+        src: ./
+        dest: /app/
+
+    - name: Set correct permissions
+      file:
+        path: /app
+        recurse: yes
+        owner: azureuser
+        group: azureuser
+
+    - name: Start Docker Compose
+      docker_compose:
+        project_src: /app
+        files:
+          - docker-compose.yml
+        state: present

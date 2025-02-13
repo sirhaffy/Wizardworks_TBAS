@@ -15,6 +15,9 @@ public class RectangleService : IRectangleService
 
     public async Task<List<Rectangle>> GetAll() =>
         await _rectangles.Find(_ => true).ToListAsync();
+    
+    // public async Task<List<Rectangle>> GetAll() =>
+    //     await (await _rectangles.FindAsync(_ => true)).ToListAsync();
 
     public async Task<Rectangle> Add(Rectangle rectangle)
     {

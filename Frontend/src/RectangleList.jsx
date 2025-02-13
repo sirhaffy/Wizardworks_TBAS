@@ -52,7 +52,7 @@ const RectangleList = ({ refresh }) => {
                         {columnRectangles.map((rect, index) => (
                             <div
                                 key={rect.id || index}
-                                className="rectangle"
+                                className="rectangle rectangle-effect"
                                 style={{
                                     backgroundColor: rect.color // Set the rectangle color.
                                 }}
