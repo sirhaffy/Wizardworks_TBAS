@@ -39,6 +39,14 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+          
+      - name: Setup SSH keys
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/tbas_deploy_key
+          chmod 600 ~/.ssh/tbas_deploy_key
+          ssh-keygen -y -f ~/.ssh/tbas_deploy_key > ~/.ssh/tbas_deploy_key.pub
+        working-directory: infrastructure/terraform
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
