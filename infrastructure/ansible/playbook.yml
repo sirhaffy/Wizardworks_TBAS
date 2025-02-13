@@ -41,6 +41,26 @@
         state: started
         enabled: yes
 
+    - name: Debug Docker service status
+      command: systemctl status docker
+      register: docker_status
+      ignore_errors: yes
+
+    - name: Show Docker service status
+      debug:
+        var: docker_status.stdout_lines
+
+    - name: Create docker group if it doesn't exist
+      group:
+        name: docker
+        state: present
+
+    - name: Add azureuser to docker group
+      user:
+        name: azureuser
+        groups: docker
+        append: yes
+
     - name: Debug VM_IP
       debug:
         msg: "VM_IP is {{ lookup('env', 'VM_IP') }}"
@@ -61,6 +81,15 @@
         recurse: yes
         owner: azureuser
         group: azureuser
+
+    - name: Verify Docker Compose installation
+      command: docker compose version
+      register: compose_version
+      ignore_errors: yes
+
+    - name: Show Docker Compose version
+      debug:
+        var: compose_version.stdout_lines
 
     - name: Start Docker Compose
       community.docker.docker_compose_v2:
