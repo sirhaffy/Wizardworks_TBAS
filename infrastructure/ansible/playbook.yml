@@ -3,34 +3,10 @@
   hosts: app_server
   become: yes
   tasks:
-    - name: Install prerequisites
+    - name: Install required packages
       apt:
         name:
-          - ca-certificates
-          - curl
-          - gnupg
-          - python3-docker
-        state: present
-        update_cache: yes
-
-    - name: Add Docker GPG key
-      apt_key:
-        url: https://download.docker.com/linux/ubuntu/gpg
-        state: present
-
-    - name: Add Docker repository
-      apt_repository:
-        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
-        state: present
-        update_cache: yes
-
-    - name: Install Docker packages
-      apt:
-        name:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-          - docker-buildx-plugin
+          - docker.io
           - docker-compose-plugin
         state: present
         update_cache: yes
@@ -41,102 +17,19 @@
         state: started
         enabled: yes
 
-    - name: Create docker group if it doesn't exist
-      group:
-        name: docker
-        state: present
-
-    - name: Add azureuser to docker group
-      user:
-        name: azureuser
-        groups: docker
-        append: yes
-
-    - name: Create necessary directories
+    - name: Create app directory
       file:
-        path: "{{ item }}"
+        path: /app
         state: directory
         owner: azureuser
         group: azureuser
-        mode: '0755'
-      with_items:
-        - /app
-        - /app/Backend
-        - /app/Frontend
 
-    - name: Copy docker-compose files
+    - name: Copy application files
       copy:
-        src: "{{ item.src }}"
-        dest: "{{ item.dest }}"
+        src: ../../
+        dest: /app/
         owner: azureuser
         group: azureuser
-        mode: '0644'
-      with_items:
-        - { src: '../../docker-compose.yml', dest: '/app/docker-compose.yml' }
-        - { src: '../../mongo-init.js', dest: '/app/mongo-init.js' }
-
-    - name: Copy Backend files
-      copy:
-        src: ../../Backend/
-        dest: /app/Backend/
-        owner: azureuser
-        group: azureuser
-
-    - name: Copy Frontend files
-      copy:
-        src: ../../Frontend/
-        dest: /app/Frontend/
-        owner: azureuser
-        group: azureuser
-
-    - name: Copy environment files if they exist
-      copy:
-        src: "{{ item.src }}"
-        dest: "{{ item.dest }}"
-        owner: azureuser
-        group: azureuser
-        mode: '0644'
-      with_items:
-        - { src: '../../Backend/.env-backend', dest: '/app/Backend/.env-backend' }
-        - { src: '../../Frontend/.env-frontend', dest: '/app/Frontend/.env-frontend' }
-      ignore_errors: yes
-
-    - name: Update paths in docker-compose.yml
-      replace:
-        path: /app/docker-compose.yml
-        regexp: "{{ item.old }}"
-        replace: "{{ item.new }}"
-      with_items:
-        - { old: '../Backend/.env-backend', new: './Backend/.env-backend' }
-        - { old: '../Frontend/.env-frontend', new: './Frontend/.env-frontend' }
-        - { old: '../Backend', new: './Backend' }
-        - { old: '../Frontend', new: './Frontend' }
-        - { old: 'version: ''3.8''', new: '' }
-
-    - name: Verify Docker Compose installation
-      command: docker compose version
-      register: compose_version
-
-    - name: Show Docker Compose version
-      debug:
-        var: compose_version.stdout_lines
-
-    - name: Verify docker-compose.yml exists
-      stat:
-        path: /app/docker-compose.yml
-      register: compose_file
-
-    - name: Show docker-compose.yml status
-      debug:
-        msg: "docker-compose.yml exists: {{ compose_file.stat.exists }}"
-
-    - name: Cat docker-compose.yml content
-      command: cat /app/docker-compose.yml
-      register: compose_content
-
-    - name: Show docker-compose.yml content
-      debug:
-        var: compose_content.stdout_lines
 
     - name: Start Docker Compose
       community.docker.docker_compose_v2:
