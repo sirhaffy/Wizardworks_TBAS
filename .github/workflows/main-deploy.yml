@@ -1,13 +1,13 @@
-name: Deploy to Azure
+name: Production Deployment
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  deploy:
+  build:
+    name: Build & Test
     runs-on: ubuntu-latest
-    
     steps:
       - uses: actions/checkout@v3
 
@@ -23,7 +23,7 @@ jobs:
           cache: 'yarn'
           cache-dependency-path: Frontend/yarn.lock
 
-      - name: Build Backend
+      - name: Build & Test Backend
         run: |
           dotnet restore
           dotnet build --configuration Release
@@ -35,11 +35,18 @@ jobs:
           yarn install
           yarn build
 
+  infrastructure:
+    name: Infrastructure Setup
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-          
+
       - name: Setup SSH keys
         run: |
           mkdir -p ~/.ssh
@@ -55,7 +62,15 @@ jobs:
         working-directory: infrastructure/terraform
         run: |
           terraform init
+          terraform import azurerm_resource_group.main /subscriptions/831a771a-003a-4263-b2cf-fe3ef338dbca/resourceGroups/app-rg || true
           terraform apply -auto-approve
+
+  deploy:
+    name: Application Deployment
+    needs: infrastructure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
 
       - name: Setup Ansible
         run: |
@@ -65,7 +80,7 @@ jobs:
       - name: Install Ansible collections
         run: ansible-galaxy collection install community.docker
 
-      - name: Run Ansible Playbook
+      - name: Deploy with Ansible
         working-directory: infrastructure/ansible
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key

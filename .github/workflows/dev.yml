@@ -1,3 +1,4 @@
+# dev.yml
 name: Development CI
 
 on:
@@ -7,9 +8,9 @@ on:
     branches: [ dev ]
 
 jobs:
-  build-and-test:
+  backend:
+    name: Backend Build & Test
     runs-on: ubuntu-latest
-    
     steps:
       - uses: actions/checkout@v3
 
@@ -17,13 +18,6 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20.x'
-          cache: 'yarn'
-          cache-dependency-path: Frontend/yarn.lock
 
       - name: Restore .NET dependencies
         run: dotnet restore
@@ -33,6 +27,19 @@ jobs:
 
       - name: Run Backend Tests
         run: dotnet test Backend.Test/Backend.Test.csproj --configuration Release --verbosity normal
+
+  frontend:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+          cache: 'yarn'
+          cache-dependency-path: Frontend/yarn.lock
 
       - name: Install Frontend dependencies
         working-directory: Frontend
