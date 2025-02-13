@@ -27,7 +27,7 @@ jobs:
         run: |
           dotnet restore
           dotnet build --configuration Release
-          dotnet test Backend.Test/Backend.Test.csproj --no-build --verbosity normal
+          dotnet test Backend.Test/Backend.Test.csproj --configuration Release --verbosity normal
 
       - name: Build Frontend
         working-directory: Frontend
