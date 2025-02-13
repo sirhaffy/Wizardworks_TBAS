@@ -2,34 +2,28 @@ version: '3.8'
 
 services:
   mongodb:
-    container_name: tbas_mongodb
     image: mongo:latest
     ports:
       - "27017:27017"
-
     volumes:
       - mongodb_tbas_data:/data/db
-      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     command: mongod --auth
 
   backend:
-    build: ../Backend
+    build: ./Backend
     ports:
       - "5000:5000"
     env_file:
-      - ../Backend/.env-backend
+      - ./Backend/.env-backend
     depends_on:
       - mongodb
 
   frontend:
-    build: ../Frontend
+    build: ./Frontend
     ports:
       - "80:80"
-    env_file:
-      - ../Frontend/.env-frontend
     depends_on:
       - backend
 
 volumes:
   mongodb_tbas_data:
-    name: tbas_mongodb_data
