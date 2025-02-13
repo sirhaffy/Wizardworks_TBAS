@@ -21,6 +21,7 @@ jobs:
         with:
           node-version: '20.x'
           cache: 'yarn'
+          cache-dependency-path: Frontend/yarn.lock
 
       - name: Restore .NET dependencies
         run: dotnet restore
@@ -29,7 +30,7 @@ jobs:
         run: dotnet build --no-restore --configuration Release
 
       - name: Run Backend Tests
-        run: dotnet test Backend.Test/Backend.Test.csproj --no-build --verbosity normal
+        run: dotnet test Backend.Test/Backend.Test.csproj --configuration Release --verbosity normal
 
       - name: Install Frontend dependencies
         working-directory: Frontend
