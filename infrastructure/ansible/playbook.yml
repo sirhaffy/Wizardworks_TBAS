@@ -7,7 +7,8 @@
       apt:
         name:
           - docker.io
-          - docker-compose
+          - docker-compose-plugin
+          - python3-docker
         state: present
         update_cache: yes
 
@@ -39,7 +40,7 @@
         group: azureuser
 
     - name: Start Docker Compose
-      community.docker.docker_compose_v2:  # Ändrad från docker_compose till docker_compose_v2
+      community.docker.docker_compose:
         project_src: /app
         files:
           - docker-compose.yml
