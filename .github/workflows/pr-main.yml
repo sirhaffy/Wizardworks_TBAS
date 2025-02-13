@@ -1,0 +1,59 @@
+name: PR to Main
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+          cache: 'yarn'
+
+      - name: Restore .NET dependencies
+        run: dotnet restore
+
+      - name: Build Backend
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run Backend Tests
+        run: dotnet test Backend.Test/Backend.Test.csproj --no-build --verbosity normal
+
+      - name: Install Frontend dependencies
+        working-directory: Frontend
+        run: yarn install
+
+      - name: Build Frontend
+        working-directory: Frontend
+        run: yarn build
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init
+        working-directory: infrastructure/terraform
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: infrastructure/terraform
+        run: terraform plan
+
+      # OBS: Faktisk deploy sker bara när PR:en mergas till main
+      # Denna workflow verifierar bara att allt kan byggas och deployas

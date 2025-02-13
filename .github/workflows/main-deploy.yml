@@ -1,0 +1,61 @@
+name: Deploy to Azure
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+          cache: 'yarn'
+
+      - name: Build Backend
+        run: |
+          dotnet restore
+          dotnet build --configuration Release
+          dotnet test Backend.Test/Backend.Test.csproj --no-build --verbosity normal
+
+      - name: Build Frontend
+        working-directory: Frontend
+        run: |
+          yarn install
+          yarn build
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init & Apply
+        working-directory: infrastructure/terraform
+        run: |
+          terraform init
+          terraform apply -auto-approve
+
+      - name: Setup Ansible
+        run: |
+          sudo apt-add-repository --yes --update ppa:ansible/ansible
+          sudo apt install ansible
+
+      - name: Run Ansible Playbook
+        working-directory: infrastructure/ansible
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key
+          chmod 600 ssh_key
+          ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.yml playbook.yml --private-key=ssh_key
