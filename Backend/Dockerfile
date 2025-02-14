@@ -1,18 +1,22 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Kopiera csproj och återställ som ett separat lager
-COPY *.csproj .
-RUN dotnet restore
+# Kopiera solution och projekt filer först
+COPY ["Backend/Backend.csproj", "Backend/"]
+COPY ["Backend.Test/Backend.Test.csproj", "Backend.Test/"]
+COPY ["Wizardworks_TBAS.sln", "./"]
+COPY [".env", "./"]
+RUN dotnet restore "Backend/Backend.csproj"
 
-# Kopiera resten av filerna och bygg
-COPY . .
-RUN dotnet publish -c Release -o /app
+# Kopiera resten av backend-koden
+COPY Backend/. Backend/
+WORKDIR "/src/Backend"
+RUN dotnet build -c Release -o /app/build
+RUN dotnet publish -c Release -o /app/publish
 
-# Bygg runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
-COPY --from=build /app .
-EXPOSE 5000
-ENV ASPNETCORE_URLS=http://+:5000
-ENTRYPOINT ["dotnet", "YourBackendApp.dll"]
+COPY --from=build /app/publish .
+EXPOSE 5129
+ENV ASPNETCORE_URLS=http://+:5129
+ENTRYPOINT ["dotnet", "Backend.dll"]

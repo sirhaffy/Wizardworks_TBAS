@@ -1,5 +1,4 @@
-﻿---
-- name: Deploy Application
+﻿- name: Deploy Application
   hosts: app_server
   become: yes
   tasks:
@@ -25,6 +24,18 @@
         mode: '0600'
         owner: azureuser
         group: azureuser
+
+    - name: Create appsettings.Production.json from template
+      template:
+        src: templates/appsettings.Production.json.j2
+        dest: /app/Backend/appsettings.Production.json
+        mode: '0644'
+        owner: azureuser
+        group: azureuser
+      vars:
+        app_ip: "{{ lookup('env', 'VM_IP') }}"
+        mongodb_uri: "{{ lookup('env', 'MONGODB_URI') }}"
+        api_key: "{{ lookup('env', 'API_KEY') }}"
 
     - name: Start Docker Compose
       community.docker.docker_compose_v2:
