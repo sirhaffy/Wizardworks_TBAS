@@ -18,12 +18,28 @@
         group: azureuser
         mode: preserve
 
-    - name: Check if backend .env file exists
+    - name: Check if Frontend directory exists
+      stat:
+        path: /app/Frontend
+      register: frontend_dir
+
+    - name: Fail if Frontend directory is missing
+      fail:
+        msg: "Frontend directory is missing"
+      when: not frontend_dir.stat.isdir
+
+    - name: Backend - Check if .env file exists locally
+      stat:
+        path: .env
+      register: backend_env_file
+      delegate_to: localhost
+
+    - name: Backend - Check if .env file exists on server
       stat:
         path: .env
       register: backend_env_file
 
-    - name: Ensure .env file for backend
+    - name: Backend - Copy .env file
       copy:
         src: .env
         dest: /app/.env
@@ -32,19 +48,34 @@
         mode: '0600'
       when: backend_env_file.stat.exists
 
-    - name: Ensure .env file permissions for backend
+    - name: Backend - Verify .env file exists after copy
+      stat:
+        path: /app/.env
+      register: backend_env_file_after_copy
+
+    - name: Backend -Fail if .env is missing
+      fail:
+        msg: "Backend .env file is missing after copy"
+      when: not backend_env_file_after_copy.stat.exists
+
+    - name: Backend - Ensure .env file permissions
       file:
         path: /app/.env
         mode: '0600'
         owner: azureuser
         group: azureuser
 
-    - name: Check if frontend .env file exists
+    - name: Frontend - Check if .env file exists locally
+      local_action: stat path=Frontend/.env
+      register: frontend_env_file
+      become: no
+
+    - name: Frontend - Check if .env file exists on server
       stat:
         path: Frontend/.env
       register: frontend_env_file
 
-    - name: Ensure .env file for frontend
+    - name: Frontend - Copy .env file
       copy:
         src: Frontend/.env
         dest: /app/Frontend/.env
@@ -53,7 +84,17 @@
         mode: '0600'
       when: frontend_env_file.stat.exists
 
-    - name: Ensure .env file permissions
+    - name: Frontend - Verify .env file exists after copy
+      stat:
+        path: /app/Frontend/.env
+      register: frontend_env_file_after_copy
+
+    - name: Frontend - Fail if .env is missing
+      fail:
+        msg: "Frontend .env file is missing after copy"
+      when: not frontend_env_file_after_copy.stat.exists
+
+    - name: Frontend - Ensure .env file permissions
       file:
         path: /app/Frontend/.env
         mode: '0600'
