@@ -74,8 +74,8 @@
     - name: Frontend - Debug .env file status
       debug:
         msg:
-          - "Frontend .env file exists locally: {{ frontend_env_file.stat.exists }}"
-          - "Frontend .env file path: {{ frontend_env_file.stat.path }}"
+          - "Frontend .env file exists locally: {{ frontend_env_file.stat.exists | default('Unknown') }}"
+          - "Frontend .env file path: {{ frontend_env_file.stat.path | default('N/A') }}"
 
     - name: Frontend - Check if .env file exists on server
       stat:
