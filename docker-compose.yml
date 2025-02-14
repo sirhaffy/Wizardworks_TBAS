@@ -1,36 +1,54 @@
-version: '3.8'
-
 services:
   mongodb:
-    container_name: tbas_mongodb
-    image: mongo:latest
-    ports:
-      - "27017:27017"
-    env_file:
-      - .env
-    volumes:
-      - mongodb_tbas_data:/data/db
-      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
-    command: mongod --auth
+      container_name: tbas_mongodb
+      image: mongo:latest
+      ports:
+        - "27017:27017"
+      environment:
+        - MONGO_INITDB_ROOT_USERNAME=admin
+        - MONGO_INITDB_ROOT_PASSWORD=securepassword
+        - MONGO_INITDB_DATABASE=tbas_db
+      volumes:
+        - mongodb_tbas_data:/data/db
+        - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      command: mongod --auth
+      networks:
+        - tbas_network
 
   backend:
-    build: ./Backend
-    ports:
-      - "5000:5000"
+    container_name: tbas_backend
+    build:
+      context: .
+      dockerfile: Backend/Dockerfile
     environment:
-      - MONGODB_URI=mongodb://appuser:apppassword@mongodb:27017/tbas_db
+      - LOGGING__LOGLEVEL__DEFAULT=Debug
+      - LOGGING__LOGLEVEL__MICROSOFT=Debug
+    ports:
+      - "5129:5129"
+    env_file:
+      - ./.env
     depends_on:
       - mongodb
+    networks:
+      - tbas_network
 
   frontend:
-    build: ./Frontend
+    container_name: tbas_frontend
+    build:
+      context: Frontend
+      dockerfile: Dockerfile
     ports:
       - "80:80"
-    environment:
-      - VITE_API_BASE_URL=http://localhost:5129/api
-      - VITE_API_KEY=FmNtbofyWyd4O22y5rNPxHplkY5YCtUI9IcL3ADqhyE
+    env_file:
+      - ./.env
     depends_on:
       - backend
+    networks:
+      - tbas_network
+
+networks:
+  tbas_network:
+    driver: bridge
 
 volumes:
   mongodb_tbas_data:

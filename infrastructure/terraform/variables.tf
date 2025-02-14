@@ -31,7 +31,7 @@ variable "environment" {
 variable "app_ports" {
   description = "Ports to open in the security group"
   type        = list(number)
-  default     = [22, 80, 5000, 27017]
+  default     = [22, 80, 5129, 27017]
 }
 
 variable "tags" {

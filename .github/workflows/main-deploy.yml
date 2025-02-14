@@ -60,6 +60,8 @@ jobs:
 
       - name: Terraform Init & Apply
         working-directory: infrastructure/terraform
+        env:
+          TF_VAR_AZURE_VM_IP: ${{ secrets.AZURE_VM_IP }}
         run: |
           terraform init
           terraform import azurerm_resource_group.main /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/app-rg || true
@@ -75,6 +77,10 @@ jobs:
     name: Application Deployment
     needs: infrastructure
     runs-on: ubuntu-latest
+    env:
+      MONGODB_URI: mongodb://appuser:${{ secrets.MONGODB_PASSWORD }}@localhost:27017/tbas_db?authSource=admin
+      AZURE_VM_IP: ${{ secrets.AZURE_VM_IP }}
+      PROD_API_KEY: ${{ secrets.PROD_API_KEY }}
     steps:
       - uses: actions/checkout@v3
 
@@ -88,6 +94,12 @@ jobs:
 
       - name: Install Ansible collections
         run: ansible-galaxy collection install community.docker
+
+      - name: Create .env file
+        run: |
+          echo "MONGODB_URI=${{ env.MONGODB_URI }}" > .env
+          echo "PROD_API_KEY=${{ env.PROD_API_KEY }}" >> .env
+          echo "AZURE_VM_IP=${{ env.AZURE_VM_IP }}" >> .env
 
       - name: Deploy with Ansible
         working-directory: infrastructure/ansible

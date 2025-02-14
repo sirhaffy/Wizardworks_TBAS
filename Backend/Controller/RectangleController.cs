@@ -1,14 +1,15 @@
 ﻿using Backend.Interfaces;
 using Backend.Models;
-using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Cors;
 
 namespace Backend.Controller;
 
 [Authorize(AuthenticationSchemes = "ApiKey")]
 [ApiController]
 [Route("api/[controller]")]
+[EnableCors("AllowSpecificOrigins")]
 public class RectangleController : ControllerBase
 {
     private readonly IRectangleService _rectangleService;
@@ -23,7 +24,7 @@ public class RectangleController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<Rectangle>>> GetAll() =>
         await _rectangleService.GetAll();
-    
+
     [HttpPost]
     public async Task<ActionResult<Rectangle>> Add(Rectangle rectangle)
     {
@@ -39,7 +40,7 @@ public class RectangleController : ControllerBase
             throw;
         }
     }
-    
+
     [HttpDelete]
     public async Task<IActionResult> DeleteAll()
     {
@@ -54,7 +55,7 @@ public class RectangleController : ControllerBase
             _logger.LogError($"Error deleting rectangles: {ex.Message}");
             return StatusCode(500, "Internal server error");
         }
-        
+
     }
 }
 

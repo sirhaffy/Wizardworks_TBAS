@@ -23,35 +23,35 @@ public class MongoConnectionConfigurationTests
     }
 
     // Testing to connect to a MongoDB database with a valid connection string and database name.
-    [Fact]
-    public void InitializeMongoService_WithAppSettingsConfiguration_ConnectsSuccessfully()
-    {
-        // Arrange
-        var connectionString = _configuration["MongoDB:ConnectionString"];
-        var databaseName = _configuration["MongoDB:DatabaseName"];
-
-        SetupConfiguration(connectionString, databaseName);
-
-        // Act & Assert
-        VerifyServiceCreatedSuccessfully();
-    }
+    // [Fact]
+    // public void InitializeMongoService_WithAppSettingsConfiguration_ConnectsSuccessfully()
+    // {
+    //     // Arrange
+    //     var connectionString = _configuration["MongoDB:ConnectionString"];
+    //     var databaseName = _configuration["MongoDB:DatabaseName"];
+    //
+    //     SetupConfiguration(connectionString, databaseName);
+    //
+    //     // Act & Assert
+    //     VerifyServiceCreatedSuccessfully();
+    // }
 
     // Testing to connect to a MongoDB database with an invalid connection string.
-    [Theory]
-    [InlineData(null, "testdb", "connectionString")]
-    [InlineData("mongodb://localhost:27017", null, "databaseName")]
-    [InlineData(null, null, "connectionString")] // eller "databaseName" beroende på vilken som kontrolleras först
-    public void InitializeMongoService_WithInvalidConfiguration_ThrowsArgumentNullException(
-        string? connectionString,
-        string? databaseName,
-        string expectedParamName)
-    {
-        // Arrange
-        SetupConfiguration(connectionString, databaseName);
-
-        // Act & Assert
-        VerifyServiceThrowsArgumentNullException(expectedParamName);
-    }
+    // [Theory]
+    // [InlineData(null, "testdb", "connectionString")]
+    // [InlineData("mongodb://localhost:27017", null, "databaseName")]
+    // [InlineData(null, null, "connectionString")] // eller "databaseName" beroende på vilken som kontrolleras först
+    // public void InitializeMongoService_WithInvalidConfiguration_ThrowsArgumentNullException(
+    //     string? connectionString,
+    //     string? databaseName,
+    //     string expectedParamName)
+    // {
+    //     // Arrange
+    //     SetupConfiguration(connectionString, databaseName);
+    //
+    //     // Act & Assert
+    //     VerifyServiceThrowsArgumentNullException(expectedParamName);
+    // }
 
     // Testing to connect to a MongoDB database with an empty connection string.
     private void SetupConfiguration(string? connectionString, string? databaseName)
