@@ -41,7 +41,7 @@ services:
     ports:
       - "80:80"
     env_file:
-      - ${FRONTEND_ENV_FILE:-./Frontend/.env}
+      - ${FRONTEND_ENV_FILE:-Frontend/.env}
     depends_on:
       - backend
     networks:

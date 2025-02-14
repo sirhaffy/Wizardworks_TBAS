@@ -66,9 +66,16 @@
         group: azureuser
 
     - name: Frontend - Check if .env file exists locally
-      local_action: stat path=Frontend/.env
+      stat:
+        path: Frontend/.env
       register: frontend_env_file
-      become: no
+      delegate_to: localhost
+
+    - name: Frontend - Debug .env file status
+      debug:
+        msg:
+          - "Frontend .env file exists locally: {{ frontend_env_file.stat.exists }}"
+          - "Frontend .env file path: {{ frontend_env_file.stat.path }}"
 
     - name: Frontend - Check if .env file exists on server
       stat:
@@ -88,6 +95,10 @@
       stat:
         path: /app/Frontend/.env
       register: frontend_env_file_after_copy
+
+    - name: Debug output
+      debug:
+        msg: "Frontend .env file is copied to: {{ frontend_env_file_after_copy.stat.path }}"
 
     - name: Frontend - Fail if .env is missing
       fail:
