@@ -18,6 +18,14 @@
         group: azureuser
         mode: preserve
 
+    - name: Ensure .env file exists
+      file:
+        path: /app/.env
+        state: touch
+        mode: '0644'
+        owner: azureuser
+        group: azureuser
+
     - name: Ensure .env file permissions
       file:
         path: /app/.env
