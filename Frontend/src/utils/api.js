@@ -1,64 +1,77 @@
-// Import environment variables for API base URL and API key
+// import { API_BASE_URL, API_KEY } from '../config';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const API_KEY = import.meta.env.VITE_API_KEY;
 
-// TODO: Add a check to see if anything is recieved from the API, when docker is not started there should be an error.
-// TODO: Add an <ErrorBoundary> component to catch errors in the API request and display a user-friendly error message,
-// TODO: and wrap the <App> component in it to handle any errors that occur during rendering.
+class APIError extends Error {
+    constructor(message, status = null) {
+        super(message);
+        this.name = 'APIError';
+        this.status = status;
+    }
+}
 
-// Define an asynchronous function for making API requests
+const checkBackendStatus = async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/rectangle`, {
+            mode: 'cors',
+            headers: {
+                'Accept': 'application/json',
+                'X-API-Key': API_KEY
+            }
+        });
+        return response.ok;
+    } catch (error) {
+        return false;
+    }
+};
+
 export const apiFetch = async (endpoint, method = "GET", body = null) => {
     try {
-        // Check if API configuration is available
         if (!API_BASE_URL || !API_KEY) {
-            throw new Error('Missing API configuration');
+            throw new APIError('Missing API configuration. Please check your environment variables.');
         }
 
-        // Set up request options
+        const isBackendUp = await checkBackendStatus();
+        if (!isBackendUp) {
+            throw new APIError('Cannot connect to the server. The backend or database may be down.');
+        }
+
         const options = {
             method,
+            mode: 'cors',
             headers: {
-                "Content-Type": "application/json",
-                "X-API-Key": API_KEY
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-API-Key': API_KEY
             }
         };
 
-        // Add request body if provided
         if (body) {
             options.body = JSON.stringify(body);
         }
 
-        // Send the API request
         const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
-
-        // Get the response text
         const text = await response.text();
-        
-        // TODO: Remove, just for testing.
-        console.log("response", response);
-        
-        // Check if the response is not OK (status code outside 200-299 range)
+
         if (!response.ok) {
-            throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+            throw new APIError(text || `Request failed with status ${response.status}`, response.status);
         }
 
-        // Handle empty responses (status 204 or empty text)
         if (response.status === 204 || !text) {
             return null;
         }
 
-        // Parse and return the JSON response
-        return JSON.parse(text);
-    } catch (error) {
-        // Log any errors that occur during the API request
-        console.error('API request error:', error);
-
-        // Detect if the backend is unreachable
-        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-            throw new Error('Cannot connect to the server. The backend or database may be down.');
+        try {
+            return JSON.parse(text);
+        } catch (error) {
+            throw new APIError('Invalid JSON response from server');
         }
-
-        // Re-throw the error if it's not a network-related error
-        throw error;
+    } catch (error) {
+        console.error('API request error:', error);
+        if (error instanceof APIError) throw error;
+        throw new APIError(error.message || 'An unexpected error occurred');
     }
 };
+
+export { APIError };

@@ -1,7 +1,7 @@
 ﻿db = db.getSiblingDB('admin');
 db.auth('admin', 'securepassword');
 
-db = db.getSiblingDB('tbas_db');
+// Skapa appuser i admin databasen
 db.createUser({
     user: "appuser",
     pwd: "apppassword",
@@ -10,3 +10,7 @@ db.createUser({
         { role: "readWrite", db: "tbas_db" }
     ]
 });
+
+// Byt till tbas_db och skapa collection
+db = db.getSiblingDB('tbas_db');
+db.createCollection('rectangles');

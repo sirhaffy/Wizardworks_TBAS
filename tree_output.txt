@@ -1,0 +1,51 @@
+.
+├── Backend
+│   ├── Backend.csproj
+│   ├── Controller
+│   ├── Dockerfile
+│   ├── Factories
+│   ├── Interfaces
+│   ├── Models
+│   ├── Program.cs
+│   ├── Properties
+│   ├── Services
+│   ├── UML.md
+│   ├── appsettings.json
+│   ├── bin
+│   └── obj
+├── Backend.Test
+│   ├── ApiKeyValidationTests.cs
+│   ├── Backend.Test.csproj
+│   ├── MongoConnectionConfigurationTests.cs
+│   ├── RectangleApiEndpointTests.cs
+│   ├── RectangleRepositoryTests.cs
+│   ├── bin
+│   └── obj
+├── Documentation_SE
+│   ├── 01. Övergripande.md
+│   ├── 02. Frontend.md
+│   ├── 03. Backend.md
+│   └── 04. Infrastructure.md
+├── Frontend
+│   ├── Dockerfile
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── nginx.conf
+│   ├── node_modules
+│   ├── package.json
+│   ├── public
+│   ├── src
+│   ├── vite.config.js
+│   └── yarn.lock
+├── README.md
+├── Wizardworks_TBAS.sln
+├── Wizardworks_TBAS.sln.DotSettings.user
+├── docker
+├── docker-compose.yml
+├── infrastructure
+│   ├── ansible
+│   └── terraform
+├── mongo-init.js
+└── tree_output.txt
+
+22 directories, 27 files
