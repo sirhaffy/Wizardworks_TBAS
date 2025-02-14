@@ -23,10 +23,11 @@ services:
     environment:
       - LOGGING__LOGLEVEL__DEFAULT=Debug
       - LOGGING__LOGLEVEL__MICROSOFT=Debug
+      - ENV_FILE_PATH=${ENV_FILE_PATH:-./.env}
     ports:
       - "5129:5129"
     env_file:
-      - ./.env
+      - ${BACKEND_ENV_FILE:-./.env}
     depends_on:
       - mongodb
     networks:
@@ -40,7 +41,7 @@ services:
     ports:
       - "80:80"
     env_file:
-      - ./.env
+      - ${FRONTEND_ENV_FILE:-./.env}
     depends_on:
       - backend
     networks:

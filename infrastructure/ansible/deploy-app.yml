@@ -18,17 +18,44 @@
         group: azureuser
         mode: preserve
 
-    - name: Ensure .env file exists
+    - name: Check if backend .env file exists
+      stat:
+        path: .env
+      register: backend_env_file
+
+    - name: Ensure .env file for backend
+      copy:
+        src: .env
+        dest: /app/.env
+        owner: azureuser
+        group: azureuser
+        mode: '0600'
+      when: backend_env_file.stat.exists
+
+    - name: Ensure .env file permissions for backend
       file:
         path: /app/.env
-        state: touch
-        mode: '0644'
+        mode: '0600'
         owner: azureuser
         group: azureuser
 
+    - name: Check if frontend .env file exists
+      stat:
+        path: Frontend/.env
+      register: frontend_env_file
+
+    - name: Ensure .env file for frontend
+      copy:
+        src: Frontend/.env
+        dest: /app/Frontend/.env
+        owner: azureuser
+        group: azureuser
+        mode: '0600'
+      when: frontend_env_file.stat.exists
+
     - name: Ensure .env file permissions
       file:
-        path: /app/.env
+        path: /app/Frontend/.env
         mode: '0600'
         owner: azureuser
         group: azureuser
@@ -48,5 +75,9 @@
     - name: Start Docker Compose
       community.docker.docker_compose_v2:
         project_src: /app
-        files: [docker-compose.yml]
+        files:
+          - docker-compose.yml
         state: present
+        env:
+          BACKEND_ENV_FILE: /app/.env
+          FRONTEND_ENV_FILE: /app/Frontend/.env
