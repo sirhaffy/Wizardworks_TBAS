@@ -119,7 +119,7 @@ void LogRequestDetails(WebApplication app, HttpContext context)
 {
     var corsHeaders = context.Response.Headers
         .Where(h => h.Key.StartsWith("Access-Control-"))
-        .ToDictionary(h => h.Key, h => string.Join(", ", h.Value));
+        .ToDictionary(h => h.Key, h => string.Join(", ", h.Value!));
 
     app.Logger.LogInformation("Request from origin: {Origin}",
         context.Request.Headers["Origin"].ToString());
@@ -129,7 +129,7 @@ void LogRequestDetails(WebApplication app, HttpContext context)
 void LogResponseDetails(WebApplication app, HttpContext context)
 {
     app.Logger.LogInformation("CORS headers: {Headers}",
-        context.Response.Headers["Access-Control-Allow-Origin"]);
+        context.Response.Headers["Access-Control-Allow-Origin"]!);
 }
 
 void LogStartupInformation(WebApplication app)
