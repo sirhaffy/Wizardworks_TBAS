@@ -2,6 +2,7 @@
   hosts: app_server
   become: yes
   tasks:
+    # Create the main application directory with proper permissions
     - name: Create app directory
       file:
         path: /app
@@ -10,6 +11,7 @@
         group: azureuser
         mode: '0755'
 
+    # Copy all application files to the server
     - name: Copy application files
       copy:
         src: ./
@@ -18,127 +20,58 @@
         group: azureuser
         mode: preserve
 
+    # Debug information about paths for troubleshooting
     - name: Debug paths
       debug:
         msg:
           - "Playbook directory: {{ playbook_dir }}"
           - "Working directory: {{ lookup('env', 'PWD') }}"
 
+    # Verify Frontend directory exists after copy
     - name: Check if Frontend directory exists
       stat:
         path: /app/Frontend
       register: frontend_dir
 
+    # Fail early if Frontend directory is missing
     - name: Fail if Frontend directory is missing
       fail:
         msg: "Frontend directory is missing"
       when: not frontend_dir.stat.isdir
 
-    - name: Backend - Check if .env file exists locally
-      stat:
-        path: .env
-      register: backend_env_file_local
-      delegate_to: localhost
+    # Full Docker cleanup
+    - name: Full Docker cleanup
+      shell: |
+        cd /app
+        docker compose down --remove-orphans --volumes || true
+        docker stop $(docker ps -aq) || true
+        docker rm $(docker ps -aq) || true
+        docker rmi $(docker images -q) || true
+        docker system prune -af --volumes || true
+      ignore_errors: yes
 
-    - name: Backend - Check if .env file exists on server
-      stat:
-        path: /app/.env
-      register: backend_env_file_remote
-
-    - name: Backend - Copy .env file
+    # Create environment files
+    - name: Create Backend .env file
       copy:
-        src: .env
+        content: |
+          MONGODB_URI="{{ lookup('env', 'MONGODB_URI') }}"
+          PROD_API_KEY="{{ lookup('env', 'PROD_API_KEY') }}"
         dest: /app/.env
         owner: azureuser
         group: azureuser
         mode: '0600'
-      when: backend_env_file_local.stat.exists
 
-    - name: Backend - Verify .env file exists after copy
-      stat:
-        path: /app/.env
-      register: backend_env_file_after_copy
-
-    - name: Backend - Fail if .env is missing
-      fail:
-        msg: "Backend .env file is missing after copy"
-      when: not backend_env_file_after_copy.stat.exists
-
-    - name: Backend - Ensure .env file permissions
-      file:
-        path: /app/.env
-        mode: '0600'
-        owner: azureuser
-        group: azureuser
-
-    - name: Frontend - Check if .env file exists locally
-      stat:
-        path: "{{ playbook_dir }}/../Frontend/.env"
-      register: frontend_env_file_local
-      delegate_to: localhost
-
-    - name: Frontend - Create .env directory
-      file:
-        path: /app/Frontend
-        state: directory
-        mode: '0755'
-        owner: azureuser
-        group: azureuser
-      when: frontend_env_file_local.stat.exists
-
-    - name: Frontend - Debug .env file status
-      debug:
-        msg:
-          - "Frontend .env exists locally: {{ frontend_env_file_local.stat.exists | default(false) }}"
-          - "Frontend .env path locally: {{ frontend_env_file_local.stat.path | default('N/A') }}"
-
-    - name: Frontend - Check if .env file exists on server
-      stat:
-        path: /app/Frontend/.env
-      register: frontend_env_file_remote
-
-    - name: Frontend - Copy .env file
+    - name: Create Frontend .env file
       copy:
-        src: "{{ playbook_dir }}/../Frontend/.env"
+        content: |
+          VITE_API_BASE_URL="http://{{ lookup('env', 'AZURE_VM_IP') }}/api"
+          VITE_API_KEY="{{ lookup('env', 'PROD_API_KEY') }}"
         dest: /app/Frontend/.env
         owner: azureuser
         group: azureuser
         mode: '0600'
-      when: frontend_env_file_local.stat.exists
 
-    - name: Frontend - Verify .env file exists after copy
-      stat:
-        path: /app/Frontend/.env
-      register: frontend_env_file_after_copy
-      when: frontend_env_file_local.stat.exists
-
-    - name: Debug frontend env status
-      debug:
-        msg: "Frontend .env file status: {{ frontend_env_file_after_copy.stat.exists | default(false) }}"
-      when: frontend_env_file_local.stat.exists
-
-    - name: Frontend - Fail if .env is missing and was expected
-      fail:
-        msg: "Frontend .env file is missing after copy"
-      when: frontend_env_file_local.stat.exists and not frontend_env_file_after_copy.stat.exists
-
-    - name: Frontend - Ensure .env file permissions
-      file:
-        path: /app/Frontend/.env
-        mode: '0600'
-        owner: azureuser
-        group: azureuser
-      when: frontend_env_file_local.stat.exists
-
-    - name: Debug complete env files status
-      debug:
-        msg:
-          - "Backend .env local exists: {{ backend_env_file_local.stat.exists | default(false) }}"
-          - "Backend .env remote exists: {{ backend_env_file_remote.stat.exists | default(false) }}"
-          - "Frontend .env local exists: {{ frontend_env_file_local.stat.exists | default(false) }}"
-          - "Frontend .env remote exists: {{ frontend_env_file_remote.stat.exists | default(false) }}"
-          - "Frontend .env exists after copy: {{ frontend_env_file_after_copy.stat.exists | default(false) if frontend_env_file_local.stat.exists else 'Not attempted' }}"
-
+    # Create production settings from template
     - name: Create appsettings.Production.json from template
       template:
         src: templates/appsettings.Production.json.j2
@@ -151,12 +84,38 @@
         mongodb_uri: "{{ lookup('env', 'MONGODB_URI') }}"
         api_key: "{{ lookup('env', 'PROD_API_KEY') }}"
 
+    # Verify all required files exist
+    - name: Verify required files
+      stat:
+        path: "{{ item }}"
+      register: file_checks
+      with_items:
+        - /app/.env
+        - /app/Frontend/.env
+        - /app/Backend/appsettings.Production.json
+        - /app/docker-compose.yml
+
+    # Debug file status
+    - name: Debug file status
+      debug:
+        msg: "{{ item.item }} exists: {{ item.stat.exists }}"
+      with_items: "{{ file_checks.results }}"
+
+    # Create unified Docker Compose env file
+    - name: Create Docker Compose env file
+      copy:
+        content: |
+          MONGODB_URI="{{ lookup('env', 'MONGODB_URI') }}"
+          PROD_API_KEY="{{ lookup('env', 'PROD_API_KEY') }}"
+          VITE_API_BASE_URL="http://{{ lookup('env', 'AZURE_VM_IP') }}/api"
+          VITE_API_KEY="{{ lookup('env', 'PROD_API_KEY') }}"
+        dest: /app/.env.docker
+        owner: azureuser
+        group: azureuser
+        mode: '0600'
+
+    # Start application using Docker Compose with explicit env file
     - name: Start Docker Compose
-      community.docker.docker_compose_v2:
-        project_src: /app
-        files:
-          - docker-compose.yml
-        state: present
-        env:
-          BACKEND_ENV_FILE: /app/.env
-          FRONTEND_ENV_FILE: /app/Frontend/.env
+      shell: |
+        cd /app
+        docker compose --env-file .env.docker up -d --remove-orphans --force-recreate
