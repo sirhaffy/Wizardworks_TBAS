@@ -2,38 +2,12 @@
   hosts: app_server
   become: yes
   tasks:
-    # Create the main application directory with proper permissions
-    - name: Create app directory
-      file:
-        path: /app
-        state: directory
-        owner: azureuser
-        group: azureuser
-        mode: '0755'
-
-    # Copy all application files to the server
-    - name: Copy application files
-      copy:
-        src: ./
-        dest: /app/
-        owner: azureuser
-        group: azureuser
-        mode: preserve
-
-    # Debug information about paths for troubleshooting
-    - name: Debug paths
-      debug:
-        msg:
-          - "Playbook directory: {{ playbook_dir }}"
-          - "Working directory: {{ lookup('env', 'PWD') }}"
-
-    # Verify Frontend directory exists after copy
-    - name: Check if Frontend directory exists
+    # Skip file copying since Act already does it
+    - name: Verify Frontend directory exists
       stat:
         path: /app/Frontend
       register: frontend_dir
 
-    # Fail early if Frontend directory is missing
     - name: Fail if Frontend directory is missing
       fail:
         msg: "Frontend directory is missing"
@@ -55,7 +29,10 @@
       copy:
         content: |
           MONGODB_URI="{{ lookup('env', 'MONGODB_URI') }}"
-          PROD_API_KEY="{{ lookup('env', 'PROD_API_KEY') }}"
+          API_KEY="{{ lookup('env', 'API_KEY') }}"
+          MONGODB_ADMIN="{{ lookup('env', 'MONGODB_ADMIN') }}"
+          MONGODB_ADMIN_PASSWORD="{{ lookup('env', 'MONGODB_ADMIN_PASSWORD') }}"
+          MONGODB_DATABASE="{{ lookup('env', 'MONGODB_DATABASE') }}"
         dest: /app/.env
         owner: azureuser
         group: azureuser
@@ -65,7 +42,7 @@
       copy:
         content: |
           VITE_API_BASE_URL="http://{{ lookup('env', 'AZURE_VM_IP') }}/api"
-          VITE_API_KEY="{{ lookup('env', 'PROD_API_KEY') }}"
+          VITE_API_KEY="{{ lookup('env', 'API_KEY') }}"
         dest: /app/Frontend/.env
         owner: azureuser
         group: azureuser
@@ -74,7 +51,7 @@
     # Create production settings from template
     - name: Create appsettings.Production.json from template
       template:
-        src: templates/appsettings.Production.json.j2
+        src: "{{ playbook_dir }}/templates/appsettings.Production.json.j2"
         dest: /app/Backend/appsettings.Production.json
         mode: '0644'
         owner: azureuser
@@ -82,7 +59,7 @@
       vars:
         app_ip: "{{ lookup('env', 'VM_IP') }}"
         mongodb_uri: "{{ lookup('env', 'MONGODB_URI') }}"
-        api_key: "{{ lookup('env', 'PROD_API_KEY') }}"
+        api_key: "{{ lookup('env', 'API_KEY') }}"
 
     # Verify all required files exist
     - name: Verify required files
@@ -95,27 +72,10 @@
         - /app/Backend/appsettings.Production.json
         - /app/docker-compose.yml
 
-    # Debug file status
-    - name: Debug file status
-      debug:
-        msg: "{{ item.item }} exists: {{ item.stat.exists }}"
-      with_items: "{{ file_checks.results }}"
-
-    # Create unified Docker Compose env file
-    - name: Create Docker Compose env file
-      copy:
-        content: |
-          MONGODB_URI="{{ lookup('env', 'MONGODB_URI') }}"
-          PROD_API_KEY="{{ lookup('env', 'PROD_API_KEY') }}"
-          VITE_API_BASE_URL="http://{{ lookup('env', 'AZURE_VM_IP') }}/api"
-          VITE_API_KEY="{{ lookup('env', 'PROD_API_KEY') }}"
-        dest: /app/.env.docker
-        owner: azureuser
-        group: azureuser
-        mode: '0600'
-
-    # Start application using Docker Compose with explicit env file
+    # Start application using Docker Compose
     - name: Start Docker Compose
-      shell: |
+      ansible.builtin.shell: |
         cd /app
-        docker compose --env-file .env.docker up -d --remove-orphans --force-recreate
+        docker compose up -d --remove-orphans --force-recreate
+      args:
+        chdir: /app
