@@ -18,6 +18,12 @@
         group: azureuser
         mode: preserve
 
+    - name: Debug paths
+      debug:
+        msg:
+          - "Playbook directory: {{ playbook_dir }}"
+          - "Working directory: {{ lookup('env', 'PWD') }}"
+
     - name: Check if Frontend directory exists
       stat:
         path: /app/Frontend
@@ -31,13 +37,13 @@
     - name: Backend - Check if .env file exists locally
       stat:
         path: .env
-      register: backend_env_file
+      register: backend_env_file_local
       delegate_to: localhost
 
     - name: Backend - Check if .env file exists on server
       stat:
-        path: .env
-      register: backend_env_file
+        path: /app/.env
+      register: backend_env_file_remote
 
     - name: Backend - Copy .env file
       copy:
@@ -46,14 +52,14 @@
         owner: azureuser
         group: azureuser
         mode: '0600'
-      when: backend_env_file.stat.exists
+      when: backend_env_file_local.stat.exists
 
     - name: Backend - Verify .env file exists after copy
       stat:
         path: /app/.env
       register: backend_env_file_after_copy
 
-    - name: Backend -Fail if .env is missing
+    - name: Backend - Fail if .env is missing
       fail:
         msg: "Backend .env file is missing after copy"
       when: not backend_env_file_after_copy.stat.exists
@@ -67,43 +73,54 @@
 
     - name: Frontend - Check if .env file exists locally
       stat:
-        path: Frontend/.env
-      register: frontend_env_file
+        path: "{{ playbook_dir }}/../Frontend/.env"
+      register: frontend_env_file_local
       delegate_to: localhost
+
+    - name: Frontend - Create .env directory
+      file:
+        path: /app/Frontend
+        state: directory
+        mode: '0755'
+        owner: azureuser
+        group: azureuser
+      when: frontend_env_file_local.stat.exists
 
     - name: Frontend - Debug .env file status
       debug:
         msg:
-          - "Frontend .env file exists after copy: {{ frontend_env_file_after_copy.stat.exists | default('Unknown') }}"
-          - "Frontend .env file path: {{ frontend_env_file_after_copy.stat.path | default('N/A') }}"
+          - "Frontend .env exists locally: {{ frontend_env_file_local.stat.exists | default(false) }}"
+          - "Frontend .env path locally: {{ frontend_env_file_local.stat.path | default('N/A') }}"
 
     - name: Frontend - Check if .env file exists on server
       stat:
-        path: Frontend/.env
-      register: frontend_env_file
+        path: /app/Frontend/.env
+      register: frontend_env_file_remote
 
     - name: Frontend - Copy .env file
       copy:
-        src: Frontend/.env
+        src: "{{ playbook_dir }}/../Frontend/.env"
         dest: /app/Frontend/.env
         owner: azureuser
         group: azureuser
         mode: '0600'
-      when: frontend_env_file.stat.exists
+      when: frontend_env_file_local.stat.exists
 
     - name: Frontend - Verify .env file exists after copy
       stat:
         path: /app/Frontend/.env
       register: frontend_env_file_after_copy
+      when: frontend_env_file_local.stat.exists
 
-    - name: Debug output
+    - name: Debug frontend env status
       debug:
-        msg: "Frontend .env file is copied to: {{ frontend_env_file_after_copy.stat.path }}"
+        msg: "Frontend .env file status: {{ frontend_env_file_after_copy.stat.exists | default(false) }}"
+      when: frontend_env_file_local.stat.exists
 
-    - name: Frontend - Fail if .env is missing
+    - name: Frontend - Fail if .env is missing and was expected
       fail:
         msg: "Frontend .env file is missing after copy"
-      when: not frontend_env_file_after_copy.stat.exists
+      when: frontend_env_file_local.stat.exists and not frontend_env_file_after_copy.stat.exists
 
     - name: Frontend - Ensure .env file permissions
       file:
@@ -111,6 +128,16 @@
         mode: '0600'
         owner: azureuser
         group: azureuser
+      when: frontend_env_file_local.stat.exists
+
+    - name: Debug complete env files status
+      debug:
+        msg:
+          - "Backend .env local exists: {{ backend_env_file_local.stat.exists | default(false) }}"
+          - "Backend .env remote exists: {{ backend_env_file_remote.stat.exists | default(false) }}"
+          - "Frontend .env local exists: {{ frontend_env_file_local.stat.exists | default(false) }}"
+          - "Frontend .env remote exists: {{ frontend_env_file_remote.stat.exists | default(false) }}"
+          - "Frontend .env exists after copy: {{ frontend_env_file_after_copy.stat.exists | default(false) if frontend_env_file_local.stat.exists else 'Not attempted' }}"
 
     - name: Create appsettings.Production.json from template
       template:
@@ -122,7 +149,7 @@
       vars:
         app_ip: "{{ lookup('env', 'VM_IP') }}"
         mongodb_uri: "{{ lookup('env', 'MONGODB_URI') }}"
-        api_key: "{{ lookup('env', 'API_KEY') }}"
+        api_key: "{{ lookup('env', 'PROD_API_KEY') }}"
 
     - name: Start Docker Compose
       community.docker.docker_compose_v2:
