@@ -16,7 +16,6 @@ const AnimatedButton = ({ children, onClick, ...props }) => {
             button.addEventListener('animationend', handleAnimationEnd);
         }
 
-        // Call the original onClick handler if provided
         if (onClick) {
             onClick(event);
         }
