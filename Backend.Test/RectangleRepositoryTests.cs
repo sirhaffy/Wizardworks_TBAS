@@ -11,7 +11,7 @@ public class RectangleRepositoryTests
     private readonly Mock<IMongoService> _mockMongoService;
     private readonly Mock<IMongoCollection<Rectangle>> _mockCollection;
     private readonly Mock<IAsyncCursor<Rectangle>> _mockCursor;
-    private readonly RectangleService _sut; // System Under Test
+    private readonly RectangleService _sut;
 
     public RectangleRepositoryTests()
     {

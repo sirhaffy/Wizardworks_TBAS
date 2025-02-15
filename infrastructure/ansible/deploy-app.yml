@@ -24,19 +24,40 @@
         docker system prune -af --volumes || true
       ignore_errors: yes
 
+    # DEBUG - kan tas bort senare
+    - name: Debug all environment variables
+      ansible.builtin.debug:
+        msg: |
+          All environment variables:
+          MONGODB_URI: {{ lookup('env', 'MONGODB_URI') }}
+          MONGODB_DATABASE: {{ lookup('env', 'MONGODB_DATABASE') }}
+          MONGODB_ADMIN: {{ lookup('env', 'MONGODB_ADMIN') }}
+          MONGODB_ADMIN_PASSWORD: {{ lookup('env', 'MONGODB_ADMIN_PASSWORD') }}
+          API_KEY: {{ lookup('env', 'API_KEY') }}
+
     # Create environment files
     - name: Create Backend .env file
       copy:
         content: |
-          MONGODB_URI="{{ lookup('env', 'MONGODB_URI') }}"
+          MONGODB_URI="mongodb://appuser:apppassword@mongodb:27017/tbas_db?authSource=admin"
           API_KEY="{{ lookup('env', 'API_KEY') }}"
-          MONGODB_ADMIN="{{ lookup('env', 'MONGODB_ADMIN') }}"
-          MONGODB_ADMIN_PASSWORD="{{ lookup('env', 'MONGODB_ADMIN_PASSWORD') }}"
-          MONGODB_DATABASE="{{ lookup('env', 'MONGODB_DATABASE') }}"
+          MONGODB_ADMIN="admin"
+          MONGODB_ADMIN_PASSWORD="securepassword"
+          MONGODB_DATABASE="tbas_db"
         dest: /app/.env
         owner: azureuser
         group: azureuser
         mode: '0600'
+
+    # DEBUG - kan tas bort senare
+    - name: Display created .env contents
+      ansible.builtin.shell: cat /app/.env
+      register: env_contents
+
+    # DEBUG - kan tas bort senare
+    - name: Show .env contents
+      debug:
+        var: env_contents.stdout_lines
 
     - name: Create Frontend .env file
       copy:
@@ -61,6 +82,7 @@
         mongodb_uri: "{{ lookup('env', 'MONGODB_URI') }}"
         api_key: "{{ lookup('env', 'API_KEY') }}"
 
+    # DEBUG - kan tas bort senare
     - name: Debug MongoDB Configuration
       ansible.builtin.debug:
         msg: |
