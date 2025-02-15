@@ -108,7 +108,7 @@ jobs:
       - name: Setup Ansible
         run: |
           sudo apt-add-repository --yes --update ppa:ansible/ansible
-          sudo apt install ansible
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ansible
 
       - name: Install Ansible collections
         run: ansible-galaxy collection install community.docker
