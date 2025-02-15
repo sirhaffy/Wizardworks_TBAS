@@ -8,13 +8,8 @@ RUN yarn install --frozen-lockfile
 # Kopiera alla filer inklusive .env
 COPY . .
 
-# Sätt miljövariabler explicit för byggprocessen
-# ENV VITE_API_BASE_URL=http://localhost/api
-# ENV VITE_API_KEY=FmNtbofyWyd4O22y5rNPxHplkY5YCtUI9IcL3ADqhyE
-
-# Rensa cache och bygg
-RUN yarn cache clean
-RUN yarn build --force
+# Bygg applikationen
+RUN yarn build
 
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
