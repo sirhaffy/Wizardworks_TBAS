@@ -21,6 +21,9 @@ services:
     build:
       context: .
       dockerfile: Backend/Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=0
+      no-cache: true
     ports:
       - "5129:5129"
     depends_on:
@@ -36,6 +39,9 @@ services:
     build:
       context: Frontend
       dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=0
+      no-cache: true
     ports:
       - "80:80"
     depends_on:

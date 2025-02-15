@@ -13,6 +13,19 @@
         msg: "Frontend directory is missing"
       when: not frontend_dir.stat.isdir
 
+    # Clean build artifacts
+    - name: Clean build artifacts
+      shell: |
+        cd /app
+        # Frontend cleanup
+        rm -rf Frontend/node_modules Frontend/.cache Frontend/dist
+        rm -f Frontend/.env.local
+
+        # Backend cleanup
+        rm -rf Backend/bin Backend/obj
+        rm -f Backend/appsettings.Development.json
+      ignore_errors: yes
+
     # Full Docker cleanup
     - name: Full Docker cleanup
       shell: |
@@ -40,11 +53,11 @@
     - name: Create Backend .env file
       copy:
         content: |
-          MONGODB_URI="mongodb://appuser:apppassword@mongodb:27017/tbas_db?authSource=admin"
+          MONGODB_URI="mongodb://{{ lookup('env', 'MONGODB_USER') }}:{{ lookup('env', 'MONGODB_PASSWORD') }}@mongodb:27017/{{ lookup('env', 'MONGODB_DATABASE') }}?authSource=admin"
           API_KEY="{{ lookup('env', 'API_KEY') }}"
-          MONGODB_ADMIN="admin"
-          MONGODB_ADMIN_PASSWORD="securepassword"
-          MONGODB_DATABASE="tbas_db"
+          MONGODB_ADMIN="{{ lookup('env', 'MONGODB_ADMIN') }}"
+          MONGODB_ADMIN_PASSWORD="{{ lookup('env', 'MONGODB_ADMIN_PASSWORD') }}"
+          MONGODB_DATABASE="{{ lookup('env', 'MONGODB_DATABASE') }}"
         dest: /app/.env
         owner: azureuser
         group: azureuser
