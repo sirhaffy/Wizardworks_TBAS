@@ -1,30 +1,30 @@
 services:
   # MongoDB Database Service
   mongodb:
+    container_name: tbas_mongodb
     image: mongo
-    container_name: mongodb
     ports:
       - "27017:27017"
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=securepassword
+      - MONGO_INITDB_ROOT_USERNAME=${MONGODB_ADMIN}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_ADMIN_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGODB_DATABASE}
     volumes:
       - mongodb_tbas_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     networks:
       - tbas_network
 
   # Backend API Service
   backend:
+    container_name: tbas_backend
     build:
       context: .
       dockerfile: Backend/Dockerfile
     ports:
-      - "5129:80"
+      - "5129:5129"
     depends_on:
       - mongodb
-    environment:
-      - MONGODB_URI=${MONGODB_URI}
-      - PROD_API_KEY=${PROD_API_KEY}
     env_file:
       - .env
     networks:
@@ -32,6 +32,7 @@ services:
 
   # Frontend Web Service
   frontend:
+    container_name: tbas_frontend
     build:
       context: Frontend
       dockerfile: Dockerfile
@@ -39,9 +40,6 @@ services:
       - "80:80"
     depends_on:
       - backend
-    environment:
-      - VITE_API_BASE_URL=${VITE_API_BASE_URL}
-      - VITE_API_KEY=${VITE_API_KEY}
     env_file:
       - Frontend/.env
     networks:

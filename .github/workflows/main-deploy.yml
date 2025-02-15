@@ -20,14 +20,14 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '20.x'
-          cache: 'yarn'
-          cache-dependency-path: Frontend/yarn.lock
+
+      - name: Install yarn
+        run: npm install -g yarn
 
       - name: Install dependencies
         working-directory: Frontend
         run: |
-          npm install -g yarn
-          yarn install
+          yarn install --frozen-lockfile
 
       - name: Build & Test Backend
         run: |
@@ -90,7 +90,7 @@ jobs:
     env:
       MONGODB_URI: mongodb://appuser:${{ secrets.MONGODB_PASSWORD }}@localhost:27017/tbas_db?authSource=admin
       AZURE_VM_IP: ${{ secrets.AZURE_VM_IP }}
-      PROD_API_KEY: ${{ secrets.PROD_API_KEY }}
+      API_KEY: ${{ secrets.API_KEY }}
     steps:
       - uses: actions/checkout@v3
 
@@ -98,11 +98,11 @@ jobs:
         run: |
           # Create Frontend .env
           echo "VITE_API_BASE_URL=http://${{ secrets.AZURE_VM_IP }}/api" > Frontend/.env
-          echo "VITE_API_KEY=${{ secrets.PROD_API_KEY }}" >> Frontend/.env
+          echo "VITE_API_KEY=${{ secrets.API_KEY }}" >> Frontend/.env
 
           # Create Backend .env
           echo "MONGODB_URI=${{ env.MONGODB_URI }}" > .env
-          echo "PROD_API_KEY=${{ env.PROD_API_KEY }}" >> .env
+          echo "API_KEY=${{ env.API_KEY }}" >> .env
           echo "AZURE_VM_IP=${{ env.AZURE_VM_IP }}" >> .env
 
       - name: Setup Ansible
