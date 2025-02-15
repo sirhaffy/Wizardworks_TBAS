@@ -17,16 +17,12 @@
     - name: Clean build artifacts
       shell: |
         cd /app
-        # Frontend cleanup
         rm -rf Frontend/node_modules Frontend/.cache Frontend/dist
-        rm -f Frontend/.env.local
-
-        # Backend cleanup
+        rm -rf Frontend/.vite
         rm -rf Backend/bin Backend/obj
         rm -f Backend/appsettings.Development.json
       ignore_errors: yes
 
-    # Full Docker cleanup
     - name: Full Docker cleanup
       shell: |
         cd /app
@@ -36,7 +32,10 @@
         docker rmi $(docker images -q) --force || true
         docker system prune -af --volumes || true
         docker builder prune -af || true
+        docker volume rm $(docker volume ls -q) || true
+        docker network prune -f || true
       ignore_errors: yes
+
 
     # DEBUG - kan tas bort senare
     - name: Debug all environment variables
@@ -120,6 +119,6 @@
       ansible.builtin.shell: |
         cd /app
         docker compose build --no-cache
-        docker compose up -d --force-recreate
+        docker compose up -d --force-recreate --remove-orphans
       args:
         chdir: /app

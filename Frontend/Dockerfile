@@ -8,6 +8,10 @@ RUN yarn install --frozen-lockfile
 # Kopiera alla filer inklusive .env
 COPY . .
 
+# Tvinga ombyggnation av cache vid varje bygge
+ARG CACHE_BUST=$(date +%s)
+RUN echo "Cache bust: $CACHE_BUST"
+
 # Bygg applikationen
 RUN yarn build
 

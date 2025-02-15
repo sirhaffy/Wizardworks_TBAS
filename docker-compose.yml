@@ -14,6 +14,7 @@ services:
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     networks:
       - tbas_network
+    restart: unless-stopped
 
   # Backend API Service
   backend:
@@ -22,7 +23,7 @@ services:
       context: .
       dockerfile: Backend/Dockerfile
       args:
-        - BUILDKIT_INLINE_CACHE=0
+        CACHE_BUST: ${CACHE_BUST:-1}
       no-cache: true
     ports:
       - "5129:5129"
@@ -32,6 +33,7 @@ services:
       - .env
     networks:
       - tbas_network
+    restart: unless-stopped
 
   # Frontend Web Service
   frontend:
@@ -40,7 +42,7 @@ services:
       context: Frontend
       dockerfile: Dockerfile
       args:
-        - BUILDKIT_INLINE_CACHE=0
+        CACHE_BUST: ${CACHE_BUST:-1}
       no-cache: true
     ports:
       - "80:80"
@@ -50,6 +52,7 @@ services:
       - Frontend/.env
     networks:
       - tbas_network
+    restart: unless-stopped
 
 # Docker Network Configuration
 networks:
