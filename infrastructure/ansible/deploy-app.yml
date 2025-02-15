@@ -20,8 +20,9 @@
         docker compose down --remove-orphans --volumes || true
         docker stop $(docker ps -aq) || true
         docker rm $(docker ps -aq) || true
-        docker rmi $(docker images -q) || true
+        docker rmi $(docker images -q) --force || true
         docker system prune -af --volumes || true
+        docker builder prune -af || true
       ignore_errors: yes
 
     # DEBUG - kan tas bort senare
@@ -105,6 +106,7 @@
     - name: Start Docker Compose
       ansible.builtin.shell: |
         cd /app
-        docker compose up -d --remove-orphans --force-recreate
+        docker compose build --no-cache
+        docker compose up -d --force-recreate
       args:
         chdir: /app
