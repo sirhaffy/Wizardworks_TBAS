@@ -61,6 +61,13 @@
         mongodb_uri: "{{ lookup('env', 'MONGODB_URI') }}"
         api_key: "{{ lookup('env', 'API_KEY') }}"
 
+    - name: Debug MongoDB Configuration
+      ansible.builtin.debug:
+        msg: |
+          MONGODB_URI: {{ lookup('env', 'MONGODB_URI') }}
+          MONGODB_DATABASE: {{ lookup('env', 'MONGODB_DATABASE') }}
+          MONGODB_ADMIN: {{ lookup('env', 'MONGODB_ADMIN') }}
+
     # Verify all required files exist
     - name: Verify required files
       stat:
