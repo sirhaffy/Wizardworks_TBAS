@@ -40,10 +40,6 @@ services:
     build:
       context: Frontend
       dockerfile: Dockerfile
-      args:
-        BUILD_VERSION: ${BUILD_VERSION:-local}
-        CACHE_BUST: ${GITHUB_SHA:-local}
-      no_cache: true
     ports:
       - "80:80"
     depends_on:
