@@ -75,7 +75,7 @@
         files:
           - docker-compose.yml
         build: true
-        pull: true
+        pull: "always"
         remove_orphans: true
         remove_volumes: false
         env:
