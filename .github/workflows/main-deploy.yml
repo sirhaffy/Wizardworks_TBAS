@@ -51,7 +51,7 @@ jobs:
           fi
 
   infrastructure:
-    name: Infrastructure Setup
+    name: Azure Infrastructure Setup
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -95,7 +95,7 @@ jobs:
           terraform apply -auto-approve
 
   deploy:
-    name: Application Deployment
+    name: Deploy to Azure
     needs: infrastructure
     runs-on: ubuntu-latest
     env:
