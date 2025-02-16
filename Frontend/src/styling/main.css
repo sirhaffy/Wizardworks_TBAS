@@ -84,7 +84,6 @@ button {
   }
 }
 
-
 /* Main wrapper */
 .app-container {
   display: flex;
@@ -102,7 +101,7 @@ button {
     display: flex;
     gap: 1rem;
     justify-content: center;
-    padding: 20px;
+    padding: 1.25rem;
 
     .rectangle-columns {
       display: flex;
