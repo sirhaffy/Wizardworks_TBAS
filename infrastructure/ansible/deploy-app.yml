@@ -19,6 +19,13 @@
         msg: "Frontend directory is missing"
       when: not file_checks.results[0].stat.isdir
 
+    - name: Stoppa och ta bort existerande containers
+      community.docker.docker_compose_v2:
+        project_src: /app
+        state: absent
+        remove_volumes: true
+      ignore_errors: yes
+
     - name: Skapa Backend .env-fil
       copy:
         content: |
@@ -40,17 +47,15 @@
         dest: /app/Frontend/.env
         mode: '0600'
 
-    - name: Stoppa och ta bort existerande containers
+    - name: Bygg och starta upp Docker Compose v2
       community.docker.docker_compose_v2:
         project_src: /app
-        state: absent
-        remove_volumes: true
-
-    - name: Bygg och starta upp Docker Compose
-      community.docker.docker_compose_v2:
-        project_src: /app
-        build: true
-        pull: true
+        files:
+          - docker-compose.yml
+        build: always
+        pull: always
+        remove_orphans: true
+        remove_volumes: false
         state: present
         env_files:
           - /app/.env
