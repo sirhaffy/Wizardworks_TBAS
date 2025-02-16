@@ -17,6 +17,7 @@ ENV VITE_API_KEY=${VITE_API_KEY}
 
 # Debug - visa miljövariabler
 RUN echo "Building with VITE_API_BASE_URL=$VITE_API_BASE_URL"
+RUN echo "Building with BUILD_TIME=$BUILD_TIME"
 
 # Bygg applikationen
 RUN yarn build

@@ -2,15 +2,7 @@
 - name: Deploy TBAS Application
   hosts: app_server
   become: yes
-  vars:
-    deployment_timestamp: "{{ lookup('env', 'DEPLOYMENT_TIMESTAMP') }}"
   tasks:
-    - name: Debug information
-      debug:
-        msg:
-          - "Current timestamp: {{ deployment_timestamp }}"
-          - "App directory exists: {{ lookup('file', '/app/.buildtime', errors='ignore') | default('No buildtime file found') }}"
-
     - name: Verifiera app-mapp
       stat:
         path: /app
@@ -59,7 +51,6 @@
               MONGODB_ADMIN="{{ lookup('env', 'MONGODB_ADMIN') }}"
               MONGODB_ADMIN_PASSWORD="{{ lookup('env', 'MONGODB_ADMIN_PASSWORD') }}"
               MONGODB_DATABASE="{{ lookup('env', 'MONGODB_DATABASE') }}"
-              BUILD_TIME="{{ deployment_timestamp }}"
             dest: /app/.env
             mode: '0600'
 
@@ -68,18 +59,17 @@
             content: |
               VITE_API_BASE_URL="http://{{ lookup('env', 'AZURE_VM_IP') }}/api"
               VITE_API_KEY="{{ lookup('env', 'API_KEY') }}"
-              BUILD_TIME="{{ deployment_timestamp }}"
             dest: /app/Frontend/.env
             mode: '0600'
 
     - name: Bygg och starta med Docker Compose
       shell: |
         cd /app
-        echo "Current directory content:"
-        ls -la
-        echo "Starting build..."
+        echo "=== Starting fresh build ==="
         docker compose build --no-cache --pull
-        echo "Build complete, starting containers..."
+        echo "=== Build complete, checking image details ==="
+        docker image inspect app-frontend:latest || true
+        echo "=== Starting containers ==="
         docker compose up -d --force-recreate
       register: compose_result
 
