@@ -5,36 +5,21 @@
     build_version: "{{ lookup('env', 'GITHUB_SHA') | default(lookup('pipe', 'date +%Y%m%d%H%M%S'), true) }}"
     debug_mode: "{{ lookup('env', 'DEBUG_MODE') | default(false) }}"
   tasks:
-    - name: Verify Frontend directory exists
-      stat:
-        path: /app/Frontend
-      register: frontend_dir
 
-    - name: Fail if Frontend directory is missing
+    - name: Kontrollera att nödvändiga filer och mappar finns
+      stat:
+        path: "{{ item }}"
+      register: file_checks
+      with_items:
+        - /app/Frontend
+        - /app/docker-compose.yml
+
+    - name: Stoppa om Frontend-mappen saknas
       fail:
         msg: "Frontend directory is missing"
-      when: not frontend_dir.stat.isdir
+      when: not file_checks.results[0].stat.isdir
 
-    - name: Stop and remove existing containers
-      community.docker.docker_compose_v2:
-        project_src: /app
-        state: absent
-        remove_volumes: true
-      ignore_errors: yes
-
-    - name: Debug information
-      when: debug_mode | bool
-      block:
-        - name: Debug environment variables
-          ansible.builtin.debug:
-            msg: |
-              Build version: {{ build_version }}
-              MongoDB URI: {{ lookup('env', 'MONGODB_URI') }}
-              MongoDB Database: {{ lookup('env', 'MONGODB_DATABASE') }}
-              MongoDB Admin: {{ lookup('env', 'MONGODB_ADMIN') }}
-              API Key: {{ lookup('env', 'API_KEY') }}
-
-    - name: Create Backend .env file
+    - name: Skapa Backend .env-fil
       copy:
         content: |
           MONGODB_URI="mongodb://{{ lookup('env', 'MONGODB_USER') }}:{{ lookup('env', 'MONGODB_PASSWORD') }}@mongodb:27017/{{ lookup('env', 'MONGODB_DATABASE') }}?authSource=admin"
@@ -45,10 +30,8 @@
           BUILD_VERSION="{{ build_version }}"
         dest: /app/.env
         mode: '0600'
-        owner: azureuser
-        group: azureuser
 
-    - name: Create Frontend .env file
+    - name: Skapa Frontend .env-fil
       copy:
         content: |
           VITE_API_BASE_URL="http://{{ lookup('env', 'AZURE_VM_IP') }}/api"
@@ -56,28 +39,18 @@
           VITE_BUILD_VERSION="{{ build_version }}"
         dest: /app/Frontend/.env
         mode: '0600'
-        owner: azureuser
-        group: azureuser
 
-    - name: Verify required files
-      when: debug_mode | bool
-      stat:
-        path: "{{ item }}"
-      register: file_checks
-      with_items:
-        - /app/.env
-        - /app/Frontend/.env
-        - /app/docker-compose.yml
-
-    - name: Start Docker Compose
+    - name: Stoppa och ta bort existerande containers
       community.docker.docker_compose_v2:
         project_src: /app
-        files:
-          - docker-compose.yml
-        build: "always"
-        pull: "always"
-        remove_orphans: true
-        remove_volumes: false
+        state: absent
+        remove_volumes: true
+
+    - name: Bygg och starta upp Docker Compose
+      community.docker.docker_compose_v2:
+        project_src: /app
+        build: true
+        pull: true
         state: present
         env_files:
           - /app/.env

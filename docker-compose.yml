@@ -42,6 +42,7 @@ services:
       dockerfile: Dockerfile
       args:
         BUILD_VERSION: ${BUILD_VERSION:-local}
+      no_cache: true
     ports:
       - "80:80"
     depends_on:
