@@ -82,6 +82,11 @@
         group: azureuser
         mode: '0600'
 
+    - name: Set cache bust variable
+      ansible.builtin.shell: |
+        cd /app
+        echo "CACHE_BUST=$(date +%s)" >> .env
+
     # Create production settings from template
     - name: Create appsettings.Production.json from template
       template:

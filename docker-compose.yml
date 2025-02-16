@@ -24,7 +24,6 @@ services:
       dockerfile: Backend/Dockerfile
       args:
         CACHE_BUST: ${CACHE_BUST:-1}
-      no-cache: true
     ports:
       - "5129:5129"
     depends_on:
@@ -43,7 +42,6 @@ services:
       dockerfile: Dockerfile
       args:
         CACHE_BUST: ${CACHE_BUST:-1}
-      no-cache: true
     ports:
       - "80:80"
     depends_on:
