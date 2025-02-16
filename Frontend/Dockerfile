@@ -1,6 +1,9 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
+ARG BUILD_TIME
+ENV BUILD_TIME=${BUILD_TIME:-unknown}
+
 # Kopiera package.json först för bättre cache
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile

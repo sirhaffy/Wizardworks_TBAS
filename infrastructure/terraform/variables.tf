@@ -42,3 +42,8 @@ variable "tags" {
     ManagedBy   = "terraform"
   }
 }
+
+variable "deployment_timestamp" {
+  description = "Timestamp for deployment"
+  type        = string
+}
