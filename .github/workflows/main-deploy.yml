@@ -1,6 +1,5 @@
 name: Production Deployment
 
-# Triggas endast på push till main (efter PR merge).
 on:
   push:
     branches: [ main ]
@@ -21,34 +20,31 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '20.x'
-
-      - name: Install yarn
-        run: npm install -g yarn
-
-      - name: Install dependencies
-        working-directory: Frontend
-        run: |
-          yarn install --frozen-lockfile
+          cache: 'yarn'
+          cache-dependency-path: 'Frontend/yarn.lock' # Specifiera platsen för yarn.lock
 
       - name: Build & Test Backend
         run: |
           dotnet restore
           dotnet build --configuration Release
-          dotnet test Backend.Test/Backend.Test.csproj --configuration Release --verbosity normal
+          dotnet test --configuration Release Backend.Test/Backend.Test.csproj --verbosity normal
 
       - name: Build Frontend
         working-directory: Frontend
         env:
           VITE_API_BASE_URL: "http://${{ secrets.AZURE_VM_IP }}/api"
           VITE_API_KEY: "${{ secrets.API_KEY }}"
-        run: yarn build --mode production
+        run: |
+          yarn install --frozen-lockfile
+          yarn build
+        continue-on-error: false
 
       # Debug : Verify App.jsx contains required config
       - name: Verify App.jsx rebuild
         run: |
           if grep -q "Using configuration" Frontend/src/App.jsx || \
-            grep -q "API Base URL" Frontend/src/App.jsx || \
-            grep -q "API Key" Frontend/src/App.jsx; then
+             grep -q "API Base URL" Frontend/src/App.jsx || \
+             grep -q "API Key" Frontend/src/App.jsx; then
             echo "❌ main-deploy: App.jsx still contains debug lines - build failed to update" && exit 1
           else
             echo "✅ main-deploy: App.jsx has been properly rebuilt"
@@ -111,33 +107,16 @@ jobs:
       MONGODB_ADMIN: ${{ secrets.MONGODB_ADMIN }}
       MONGODB_ADMIN_PASSWORD: ${{ secrets.MONGODB_ADMIN_PASSWORD }}
       MONGODB_DATABASE: ${{ secrets.MONGODB_DATABASE }}
+
     steps:
       - uses: actions/checkout@v3
-
-      - name: Create environment files
-        run: |
-          # Create Frontend .env
-          echo "VITE_API_BASE_URL=http://${{ secrets.AZURE_VM_IP }}/api" > Frontend/.env
-          echo "VITE_API_KEY=${{ secrets.API_KEY }}" >> Frontend/.env
-
-          # Create Backend .env
-          echo "MONGODB_URI=${{ env.MONGODB_URI }}" > .env
-          echo "API_KEY=${{ env.API_KEY }}" >> .env
-          echo "MONGODB_USER=${{ env.MONGODB_USER }}" >> .env
-          echo "MONGODB_PASSWORD=${{ env.MONGODB_PASSWORD }}" >> .env
-          echo "MONGODB_ADMIN=${{ env.MONGODB_ADMIN }}" >> .env
-          echo "MONGODB_ADMIN_PASSWORD=${{ env.MONGODB_ADMIN_PASSWORD }}" >> .env
-          echo "MONGODB_DATABASE=${{ env.MONGODB_DATABASE }}" >> .env
 
       - name: Setup Ansible
         run: |
           sudo apt-add-repository --yes --update ppa:ansible/ansible
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ansible
+          DEBIAN_FRONTEND=noninteractive sudo apt-get install -y ansible
 
-      - name: Install Ansible collections
-        run: ansible-galaxy collection install community.docker
-
-      - name: Deploy with Ansible
+      - name: Run Ansible Playbook
         working-directory: infrastructure/ansible
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key

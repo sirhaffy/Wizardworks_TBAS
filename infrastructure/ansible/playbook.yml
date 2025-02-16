@@ -75,6 +75,3 @@
         pull: always
         remove_orphans: true
         state: present
-        env_files:
-          - /app/.env
-          - /app/Frontend/.env
