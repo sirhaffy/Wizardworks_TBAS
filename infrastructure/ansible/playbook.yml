@@ -3,34 +3,51 @@
   hosts: app_server
   become: yes
   vars:
-    deployment_timestamp: "{{ lookup('pipe', 'date +%Y%m%d%H%M%S') }}"
+    deployment_timestamp: "{{ lookup('env', 'DEPLOYMENT_TIMESTAMP') }}"
   tasks:
+    - name: Debug information
+      debug:
+        msg:
+          - "Current timestamp: {{ deployment_timestamp }}"
+          - "App directory exists: {{ lookup('file', '/app/.buildtime', errors='ignore') | default('No buildtime file found') }}"
+
     - name: Verifiera app-mapp
       stat:
         path: /app
       register: app_dir
       failed_when: not app_dir.stat.exists
 
-    - name: Stoppa och ta bort ALLA containers och images
-      block:
-        - name: Stoppa alla containers
-          shell: docker stop $(docker ps -aq) || true
+    - name: Docker debug info
+      shell: |
+        echo "=== Current containers ==="
+        docker ps -a
+        echo "=== Current images ==="
+        docker images
+        echo "=== Current volumes ==="
+        docker volume ls
+      register: docker_debug
 
-        - name: Ta bort alla containers
-          shell: docker rm $(docker ps -aq) || true
+    - name: Display Docker debug info
+      debug:
+        var: docker_debug.stdout_lines
 
-        - name: Ta bort alla images
-          shell: docker rmi $(docker images -q) || true
+    - name: Aggressiv rensning av Docker
+      shell: |
+        echo "Stopping all containers..."
+        docker stop $(docker ps -aq) || true
+        echo "Removing all containers..."
+        docker rm -f $(docker ps -aq) || true
+        echo "Removing all images..."
+        docker rmi -f $(docker images -q) || true
+        echo "Removing all volumes..."
+        docker volume rm $(docker volume ls -q) || true
+        echo "Pruning system..."
+        docker system prune -af
+      register: cleanup_result
 
-        - name: Prune docker system
-          shell: docker system prune -af
-      ignore_errors: yes
-
-    - name: Skapa timestamp fil för att tvinga rebuild
-      copy:
-        content: "{{ deployment_timestamp }}"
-        dest: /app/.buildtime
-        mode: '0644'
+    - name: Display cleanup result
+      debug:
+        var: cleanup_result.stdout_lines
 
     - name: Konfigurera miljöfiler
       block:
@@ -42,6 +59,7 @@
               MONGODB_ADMIN="{{ lookup('env', 'MONGODB_ADMIN') }}"
               MONGODB_ADMIN_PASSWORD="{{ lookup('env', 'MONGODB_ADMIN_PASSWORD') }}"
               MONGODB_DATABASE="{{ lookup('env', 'MONGODB_DATABASE') }}"
+              BUILD_TIME="{{ deployment_timestamp }}"
             dest: /app/.env
             mode: '0600'
 
@@ -57,14 +75,33 @@
     - name: Bygg och starta med Docker Compose
       shell: |
         cd /app
-        docker compose build --no-cache
+        echo "Current directory content:"
+        ls -la
+        echo "Starting build..."
+        docker compose build --no-cache --pull
+        echo "Build complete, starting containers..."
         docker compose up -d --force-recreate
-      environment:
-        BUILD_TIME: "{{ deployment_timestamp }}"
+      register: compose_result
+
+    - name: Display compose result
+      debug:
+        var: compose_result.stdout_lines
 
     - name: Vänta på att containers ska starta
       pause:
-        seconds: 10
+        seconds: 15
+
+    - name: Final container status
+      shell: |
+        echo "=== Final containers ==="
+        docker ps -a
+        echo "=== Final images ==="
+        docker images
+      register: final_status
+
+    - name: Display final status
+      debug:
+        var: final_status.stdout_lines
 
     - name: Verify Frontend build
       shell: |
@@ -74,15 +111,25 @@
           exit 1
         fi
 
+        echo "Found container ID: $CONTAINER_ID"
+        echo "Container details:"
+        docker inspect $CONTAINER_ID
+
+        echo "Copying and checking App.js..."
         docker cp ${CONTAINER_ID}:/usr/share/nginx/html/assets/App-*.js /tmp/App.js
 
         if grep -q "Using configuration" /tmp/App.js || \
            grep -q "API Base URL" /tmp/App.js || \
            grep -q "API Key" /tmp/App.js; then
           echo "❌ Frontend container: App.js still contains debug lines - build failed to update" >&2
+          cat /tmp/App.js
           exit 1
         else
           echo "✅ Frontend container: App.js has been properly rebuilt"
         fi
       register: verify_result
       failed_when: verify_result.rc != 0
+
+    - name: Display verification result
+      debug:
+        var: verify_result.stdout_lines
