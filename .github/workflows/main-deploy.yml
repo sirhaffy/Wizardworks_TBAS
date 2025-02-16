@@ -39,6 +39,17 @@ jobs:
         working-directory: Frontend
         run: yarn build
 
+      # Debug : Verify App.jsx contains required config
+      - name: Verify App.jsx rebuild
+        run: |
+          if grep -q "Using configuration" Frontend/src/App.jsx || \
+            grep -q "API Base URL" Frontend/src/App.jsx || \
+            grep -q "API Key" Frontend/src/App.jsx; then
+            echo "❌ App.jsx still contains debug lines - build failed to update" && exit 1
+          else
+            echo "✅ App.jsx has been properly rebuilt"
+          fi
+
   infrastructure:
     name: Infrastructure Setup
     needs: build
@@ -128,3 +139,4 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key
           chmod 600 ssh_key
           ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.yml playbook.yml --private-key=ssh_key
+
