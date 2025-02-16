@@ -1,3 +1,80 @@
 ﻿---
-- import_playbook: docker-install.yml
-- import_playbook: deploy-app.yml
+- name: Deploy TBAS Application
+  hosts: app_server
+  become: yes
+  vars:
+    build_version: "{{ lookup('env', 'GITHUB_SHA') | default(lookup('pipe', 'date +%Y%m%d%H%M%S'), true) }}"
+  tasks:
+    # Docker installation
+    - name: Install required packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+        state: present
+        update_cache: yes
+
+    # Application deployment
+    - name: Verifiera app-mapp
+      stat:
+        path: /app
+      register: app_dir
+      failed_when: not app_dir.stat.exists
+
+    - name: Stoppa existerande containers
+      community.docker.docker_compose_v2:
+        project_src: /app
+        state: absent
+        remove_volumes: true
+      ignore_errors: yes
+
+    - name: Konfigurera miljöfiler
+      block:
+        - name: Backend .env
+          copy:
+            content: |
+              MONGODB_URI="mongodb://{{ lookup('env', 'MONGODB_USER') }}:{{ lookup('env', 'MONGODB_PASSWORD') }}@mongodb:27017/{{ lookup('env', 'MONGODB_DATABASE') }}?authSource=admin"
+              API_KEY="{{ lookup('env', 'API_KEY') }}"
+              MONGODB_ADMIN="{{ lookup('env', 'MONGODB_ADMIN') }}"
+              MONGODB_ADMIN_PASSWORD="{{ lookup('env', 'MONGODB_ADMIN_PASSWORD') }}"
+              MONGODB_DATABASE="{{ lookup('env', 'MONGODB_DATABASE') }}"
+            dest: /app/.env
+            mode: '0600'
+
+        - name: Frontend .env
+          copy:
+            content: |
+              VITE_API_BASE_URL="http://{{ lookup('env', 'AZURE_VM_IP') }}/api"
+              VITE_API_KEY="{{ lookup('env', 'API_KEY') }}"
+            dest: /app/Frontend/.env
+            mode: '0600'
+
+    - name: Starta applikationen
+      community.docker.docker_compose_v2:
+        project_src: /app
+        files:
+          - docker-compose.yml
+        build: never  # Använd redan byggda artefakter
+        pull: always
+        remove_orphans: true
+        state: present
+        env_files:
+          - /app/.env
+          - /app/Frontend/.env
