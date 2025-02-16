@@ -27,7 +27,3 @@ output "application_url" {
   description = "URL to access the application"
   value       = "http://${azurerm_public_ip.main.ip_address}"
 }
-
-output "deployment_version" {
-  value = var.deployment_timestamp
-}

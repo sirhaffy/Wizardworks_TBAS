@@ -83,7 +83,7 @@ resource "azurerm_linux_virtual_machine" "main" {
   size                = var.vm_size
   admin_username      = var.admin_username
   tags                = var.tags
-  
+
   network_interface_ids = [
     azurerm_network_interface.main.id,
   ]

@@ -46,5 +46,4 @@ variable "tags" {
 variable "deployment_timestamp" {
   description = "Timestamp for deployment"
   type        = string
-  default     = timestamp()
 }
