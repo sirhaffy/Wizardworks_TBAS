@@ -1,5 +1,4 @@
 services:
-  # MongoDB Database Service
   mongodb:
     container_name: tbas_mongodb
     image: mongo
@@ -16,13 +15,11 @@ services:
       - tbas_network
     restart: unless-stopped
 
-  # Backend API Service
   backend:
     container_name: tbas_backend
     build:
       context: .
       dockerfile: Backend/Dockerfile
-      no_cache: true
     ports:
       - "5129:5129"
     depends_on:
@@ -33,7 +30,6 @@ services:
       - tbas_network
     restart: unless-stopped
 
-  # Frontend Web Service
   frontend:
     container_name: tbas_frontend
     build:
@@ -42,7 +38,6 @@ services:
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL}
         VITE_API_KEY: ${VITE_API_KEY}
-      no_cache: true
     ports:
       - "80:80"
     depends_on:
@@ -53,12 +48,10 @@ services:
       - tbas_network
     restart: unless-stopped
 
-# Docker Network Configuration
 networks:
   tbas_network:
     driver: bridge
 
-# Persistent Volume Configuration
 volumes:
   mongodb_tbas_data:
     name: tbas_mongodb_data
