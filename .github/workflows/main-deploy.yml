@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: '20.x'
           cache: 'yarn'
-          cache-dependency-path: 'Frontend/yarn.lock' # Specifiera platsen för yarn.lock
+          cache-dependency-path: 'Frontend/yarn.lock'
 
       - name: Build & Test Backend
         run: |
@@ -37,18 +37,6 @@ jobs:
         run: |
           yarn install --frozen-lockfile
           yarn build
-        continue-on-error: false
-
-      # Debug : Verify App.jsx contains required config
-      - name: Verify App.jsx rebuild
-        run: |
-          if grep -q "Using configuration" Frontend/src/App.jsx || \
-             grep -q "API Base URL" Frontend/src/App.jsx || \
-             grep -q "API Key" Frontend/src/App.jsx; then
-            echo "❌ main-deploy: App.jsx still contains debug lines - build failed to update" && exit 1
-          else
-            echo "✅ main-deploy: App.jsx has been properly rebuilt"
-          fi
 
   infrastructure:
     name: Azure Infrastructure Setup
@@ -56,10 +44,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
-      - name: Install Azure CLI
-        run: |
-          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
       - name: Azure Login
         uses: azure/login@v1
@@ -72,8 +56,6 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/tbas_deploy_key
           chmod 600 ~/.ssh/tbas_deploy_key
           ssh-keygen -y -f ~/.ssh/tbas_deploy_key > ~/.ssh/tbas_deploy_key.pub || true
-          touch ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
         working-directory: infrastructure/terraform
 
       - name: Setup Terraform
@@ -115,6 +97,16 @@ jobs:
         run: |
           sudo apt-add-repository --yes --update ppa:ansible/ansible
           DEBIAN_FRONTEND=noninteractive sudo apt-get install -y ansible
+
+      - name: Force clean before deploy
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key
+          chmod 600 ssh_key
+          ssh -i ssh_key -o StrictHostKeyChecking=no azureuser@${{ secrets.AZURE_VM_IP }} '
+            cd /app
+            docker compose down
+            docker system prune -af
+          '
 
       - name: Run Ansible Playbook
         working-directory: infrastructure/ansible

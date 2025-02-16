@@ -21,6 +21,7 @@ output "vm_fqdn" {
 output "ssh_command" {
   description = "Command to SSH into the VM"
   value       = "ssh ${var.admin_username}@${azurerm_public_ip.main.ip_address}"
+  sensitive   = true
 }
 
 output "application_url" {

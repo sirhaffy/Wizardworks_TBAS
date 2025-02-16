@@ -76,13 +76,20 @@ resource "azurerm_network_security_group" "main" {
   }
 }
 
+resource "azurerm_network_interface_security_group_association" "main" {
+  network_interface_id      = azurerm_network_interface.main.id
+  network_security_group_id = azurerm_network_security_group.main.id
+}
+
 resource "azurerm_linux_virtual_machine" "main" {
   name                = "${var.resource_group_name}-vm"
   resource_group_name = azurerm_resource_group.main.name
   location            = var.location
   size                = var.vm_size
   admin_username      = var.admin_username
-  tags                = var.tags
+  tags                = merge(var.tags, {
+    LastDeployment = formatdate("YYYY-MM-DD'T'hh:mm:ssZ", timestamp())
+  })
 
   network_interface_ids = [
     azurerm_network_interface.main.id,
@@ -103,5 +110,10 @@ resource "azurerm_linux_virtual_machine" "main" {
     offer     = "0001-com-ubuntu-server-jammy"
     sku       = "22_04-lts"
     version   = "latest"
+  }
+
+  timeouts {
+    create = "60m"
+    delete = "2h"
   }
 }
