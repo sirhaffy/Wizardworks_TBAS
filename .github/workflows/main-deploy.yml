@@ -1,5 +1,6 @@
 name: Production Deployment
 
+# Triggas endast på push till main (efter PR merge).
 on:
   push:
     branches: [ main ]
@@ -37,7 +38,10 @@ jobs:
 
       - name: Build Frontend
         working-directory: Frontend
-        run: yarn build
+        env:
+          VITE_API_BASE_URL: "http://${{ secrets.AZURE_VM_IP }}/api"
+          VITE_API_KEY: "${{ secrets.API_KEY }}"
+        run: yarn build --mode production
 
       # Debug : Verify App.jsx contains required config
       - name: Verify App.jsx rebuild
@@ -45,9 +49,9 @@ jobs:
           if grep -q "Using configuration" Frontend/src/App.jsx || \
             grep -q "API Base URL" Frontend/src/App.jsx || \
             grep -q "API Key" Frontend/src/App.jsx; then
-            echo "❌ App.jsx still contains debug lines - build failed to update" && exit 1
+            echo "❌ main-deploy: App.jsx still contains debug lines - build failed to update" && exit 1
           else
-            echo "✅ App.jsx has been properly rebuilt"
+            echo "✅ main-deploy: App.jsx has been properly rebuilt"
           fi
 
   infrastructure:
