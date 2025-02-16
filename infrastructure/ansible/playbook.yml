@@ -3,58 +3,34 @@
   hosts: app_server
   become: yes
   vars:
-    build_version: "{{ lookup('env', 'GITHUB_SHA') | default(lookup('pipe', 'date +%Y%m%d%H%M%S'), true) }}"
+    deployment_timestamp: "{{ lookup('pipe', 'date +%Y%m%d%H%M%S') }}"
   tasks:
-    # Docker installation
-    - name: Install required packages
-      apt:
-        name:
-          - apt-transport-https
-          - ca-certificates
-          - curl
-          - gnupg
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-          - docker-compose-plugin
-        state: present
-        update_cache: yes
-
-    - name: Add Docker GPG key
-      apt_key:
-        url: https://download.docker.com/linux/ubuntu/gpg
-        state: present
-
-    - name: Add Docker repository
-      apt_repository:
-        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
-        state: present
-        update_cache: yes
-
-    # Application deployment
     - name: Verifiera app-mapp
       stat:
         path: /app
       register: app_dir
       failed_when: not app_dir.stat.exists
 
-    - name: Stoppa existerande containers
-      community.docker.docker_compose_v2:
-        project_src: /app
-        state: absent
-        remove_volumes: true
+    - name: Stoppa och ta bort ALLA containers och images
+      block:
+        - name: Stoppa alla containers
+          shell: docker stop $(docker ps -aq) || true
+
+        - name: Ta bort alla containers
+          shell: docker rm $(docker ps -aq) || true
+
+        - name: Ta bort alla images
+          shell: docker rmi $(docker images -q) || true
+
+        - name: Prune docker system
+          shell: docker system prune -af
       ignore_errors: yes
 
-    - name: Remove old images
-      community.docker.docker_image:
-        name: "{{ item }}"
-        state: absent
-        force_absent: true
-      with_items:
-        - tbas_frontend
-        - tbas_backend
-        - tbas_mongodb
-      ignore_errors: yes
+    - name: Skapa timestamp fil för att tvinga rebuild
+      copy:
+        content: "{{ deployment_timestamp }}"
+        dest: /app/.buildtime
+        mode: '0644'
 
     - name: Konfigurera miljöfiler
       block:
@@ -74,20 +50,22 @@
             content: |
               VITE_API_BASE_URL="http://{{ lookup('env', 'AZURE_VM_IP') }}/api"
               VITE_API_KEY="{{ lookup('env', 'API_KEY') }}"
+              BUILD_TIME="{{ deployment_timestamp }}"
             dest: /app/Frontend/.env
             mode: '0600'
 
-    - name: Starta Docker Compose
-      community.docker.docker_compose_v2:
-        project_src: /app
-        files:
-          - docker-compose.yml
-        build: always
-        pull: always
-        remove_orphans: true # Remove containers for services not defined in the Compose file.
-        recreate: always
+    - name: Bygg och starta med Docker Compose
+      shell: |
+        cd /app
+        docker compose build --no-cache
+        docker compose up -d --force-recreate
+      environment:
+        BUILD_TIME: "{{ deployment_timestamp }}"
 
-    # Lägg till denna nya task efter Docker Compose
+    - name: Vänta på att containers ska starta
+      pause:
+        seconds: 10
+
     - name: Verify Frontend build
       shell: |
         CONTAINER_ID=$(docker ps -q -f name=tbas_frontend)
@@ -96,12 +74,11 @@
           exit 1
         fi
 
-        # Kopiera ut App.jsx från containern för verifiering
         docker cp ${CONTAINER_ID}:/usr/share/nginx/html/assets/App-*.js /tmp/App.js
 
         if grep -q "Using configuration" /tmp/App.js || \
-          grep -q "API Base URL" /tmp/App.js || \
-          grep -q "API Key" /tmp/App.js; then
+           grep -q "API Base URL" /tmp/App.js || \
+           grep -q "API Key" /tmp/App.js; then
           echo "❌ Frontend container: App.js still contains debug lines - build failed to update" >&2
           exit 1
         else
