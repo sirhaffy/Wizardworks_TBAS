@@ -7,6 +7,10 @@ RUN yarn install --frozen-lockfile
 
 # Kopiera resten av filerna
 COPY . .
+ARG VITE_API_BASE_URL
+ARG VITE_API_KEY
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_API_KEY=${VITE_API_KEY}
 
 # Bygg applikationen
 RUN yarn build
