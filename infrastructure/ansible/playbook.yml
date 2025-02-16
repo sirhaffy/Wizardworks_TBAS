@@ -45,6 +45,17 @@
         remove_volumes: true
       ignore_errors: yes
 
+    - name: Remove old images
+      community.docker.docker_image:
+        name: "{{ item }}"
+        state: absent
+        force_absent: true
+      with_items:
+        - tbas_frontend
+        - tbas_backend
+        - tbas_mongodb
+      ignore_errors: yes
+
     - name: Konfigurera miljöfiler
       block:
         - name: Backend .env
@@ -73,5 +84,28 @@
           - docker-compose.yml
         build: always
         pull: always
-        remove_orphans: true
-        state: present
+        remove_orphans: true # Remove containers for services not defined in the Compose file.
+        recreate: always
+
+    # Lägg till denna nya task efter Docker Compose
+    - name: Verify Frontend build
+      shell: |
+        CONTAINER_ID=$(docker ps -q -f name=tbas_frontend)
+        if [ -z "$CONTAINER_ID" ]; then
+          echo "Frontend container not found" >&2
+          exit 1
+        fi
+
+        # Kopiera ut App.jsx från containern för verifiering
+        docker cp ${CONTAINER_ID}:/usr/share/nginx/html/assets/App-*.js /tmp/App.js
+
+        if grep -q "Using configuration" /tmp/App.js || \
+          grep -q "API Base URL" /tmp/App.js || \
+          grep -q "API Key" /tmp/App.js; then
+          echo "❌ Frontend container: App.js still contains debug lines - build failed to update" >&2
+          exit 1
+        else
+          echo "✅ Frontend container: App.js has been properly rebuilt"
+        fi
+      register: verify_result
+      failed_when: verify_result.rc != 0
