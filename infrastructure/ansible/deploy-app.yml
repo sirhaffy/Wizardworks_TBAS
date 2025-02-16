@@ -78,5 +78,7 @@
         pull: "always"
         remove_orphans: true
         remove_volumes: false
-        env:
-          BUILD_VERSION: "{{ build_version }}"
+        state: present
+        env_files:
+          - /app/.env
+          - /app/Frontend/.env
