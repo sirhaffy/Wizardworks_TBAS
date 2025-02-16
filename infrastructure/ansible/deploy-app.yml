@@ -1,6 +1,9 @@
 ﻿- name: Deploy Application
   hosts: app_server
   become: yes
+  vars:
+    build_version: "{{ lookup('env', 'GITHUB_SHA') | default(lookup('pipe', 'date +%Y%m%d%H%M%S'), true) }}"
+    debug_mode: "{{ lookup('env', 'DEBUG_MODE') | default(false) }}"
   tasks:
     # Skip file copying since Act already does it
     - name: Verify Frontend directory exists
@@ -8,40 +11,26 @@
         path: /app/Frontend
       register: frontend_dir
 
+    # Fail if Frontend directory is missing
     - name: Fail if Frontend directory is missing
       fail:
         msg: "Frontend directory is missing"
       when: not frontend_dir.stat.isdir
 
-    # Clean build artifacts
-    - name: Clean build artifacts
-      shell: |
-        cd /app
-        rm -rf Frontend/node_modules Frontend/.cache Frontend/dist
-        rm -rf Frontend/.vite
-        rm -rf Backend/bin Backend/obj
-        rm -f Backend/appsettings.Development.json
+    # Verify Backend directory exists
+    - name: Stop and remove existing containers
+      community.docker.docker_compose:
+        project_src: /app
+        state: absent
+        remove_volumes: yes
       ignore_errors: yes
-
-    - name: Full Docker cleanup
-      shell: |
-        cd /app
-        docker compose down --remove-orphans --volumes || true
-        docker stop $(docker ps -aq) || true
-        docker rm $(docker ps -aq) || true
-        docker rmi $(docker images -q) --force || true
-        docker system prune -af --volumes || true
-        docker builder prune -af || true
-        docker volume rm $(docker volume ls -q) || true
-        docker network prune -f || true
-      ignore_errors: yes
-
 
     # DEBUG - kan tas bort senare
     - name: Debug all environment variables
       ansible.builtin.debug:
         msg: |
           All environment variables:
+          Build version: {{ build_version }}
           MONGODB_URI: {{ lookup('env', 'MONGODB_URI') }}
           MONGODB_DATABASE: {{ lookup('env', 'MONGODB_DATABASE') }}
           MONGODB_ADMIN: {{ lookup('env', 'MONGODB_ADMIN') }}
@@ -57,10 +46,11 @@
           MONGODB_ADMIN="{{ lookup('env', 'MONGODB_ADMIN') }}"
           MONGODB_ADMIN_PASSWORD="{{ lookup('env', 'MONGODB_ADMIN_PASSWORD') }}"
           MONGODB_DATABASE="{{ lookup('env', 'MONGODB_DATABASE') }}"
+          BUILD_VERSION="{{ build_version }}"
         dest: /app/.env
+        mode: '0600'
         owner: azureuser
         group: azureuser
-        mode: '0600'
 
     # DEBUG - kan tas bort senare
     - name: Display created .env contents
@@ -72,33 +62,17 @@
       debug:
         var: env_contents.stdout_lines
 
+    # Create environment files
     - name: Create Frontend .env file
       copy:
         content: |
           VITE_API_BASE_URL="http://{{ lookup('env', 'AZURE_VM_IP') }}/api"
           VITE_API_KEY="{{ lookup('env', 'API_KEY') }}"
+          VITE_BUILD_VERSION="{{ build_version }}"
         dest: /app/Frontend/.env
-        owner: azureuser
-        group: azureuser
         mode: '0600'
-
-    - name: Set cache bust variable
-      ansible.builtin.shell: |
-        cd /app
-        echo "CACHE_BUST=$(date +%s)" >> .env
-
-    # Create production settings from template
-    - name: Create appsettings.Production.json from template
-      template:
-        src: "{{ playbook_dir }}/templates/appsettings.Production.json.j2"
-        dest: /app/Backend/appsettings.Production.json
-        mode: '0644'
         owner: azureuser
         group: azureuser
-      vars:
-        app_ip: "{{ lookup('env', 'VM_IP') }}"
-        mongodb_uri: "{{ lookup('env', 'MONGODB_URI') }}"
-        api_key: "{{ lookup('env', 'API_KEY') }}"
 
     # DEBUG - kan tas bort senare
     - name: Debug MongoDB Configuration
@@ -108,7 +82,7 @@
           MONGODB_DATABASE: {{ lookup('env', 'MONGODB_DATABASE') }}
           MONGODB_ADMIN: {{ lookup('env', 'MONGODB_ADMIN') }}
 
-    # Verify all required files exist
+    # DEBUG - Verify all required files exist
     - name: Verify required files
       stat:
         path: "{{ item }}"
@@ -116,14 +90,14 @@
       with_items:
         - /app/.env
         - /app/Frontend/.env
-        - /app/Backend/appsettings.Production.json
         - /app/docker-compose.yml
 
-    # Start application using Docker Compose
+    # Start application with new version
     - name: Start Docker Compose
-      ansible.builtin.shell: |
-        cd /app
-        docker compose build --no-cache
-        docker compose up -d --force-recreate --remove-orphans
-      args:
-        chdir: /app
+      community.docker.docker_compose:
+        project_src: /app
+        build: yes
+        pull: yes
+        recreate: always
+        build_args:
+          BUILD_VERSION: "{{ build_version }}"
