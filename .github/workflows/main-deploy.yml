@@ -88,9 +88,14 @@ jobs:
     needs: infrastructure
     runs-on: ubuntu-latest
     env:
-      MONGODB_URI: mongodb://appuser:${{ secrets.MONGODB_PASSWORD }}@localhost:27017/tbas_db?authSource=admin
+      MONGODB_URI: mongodb://appuser:${{ secrets.MONGODB_PASSWORD }}@mongodb:27017/tbas_db?authSource=admin
       AZURE_VM_IP: ${{ secrets.AZURE_VM_IP }}
       API_KEY: ${{ secrets.API_KEY }}
+      MONGODB_USER: ${{ secrets.MONGODB_USER }}
+      MONGODB_PASSWORD: ${{ secrets.MONGODB_PASSWORD }}
+      MONGODB_ADMIN: ${{ secrets.MONGODB_ADMIN }}
+      MONGODB_ADMIN_PASSWORD: ${{ secrets.MONGODB_ADMIN_PASSWORD }}
+      MONGODB_DATABASE: ${{ secrets.MONGODB_DATABASE }}
     steps:
       - uses: actions/checkout@v3
 
@@ -103,7 +108,11 @@ jobs:
           # Create Backend .env
           echo "MONGODB_URI=${{ env.MONGODB_URI }}" > .env
           echo "API_KEY=${{ env.API_KEY }}" >> .env
-          echo "AZURE_VM_IP=${{ env.AZURE_VM_IP }}" >> .env
+          echo "MONGODB_USER=${{ env.MONGODB_USER }}" >> .env
+          echo "MONGODB_PASSWORD=${{ env.MONGODB_PASSWORD }}" >> .env
+          echo "MONGODB_ADMIN=${{ env.MONGODB_ADMIN }}" >> .env
+          echo "MONGODB_ADMIN_PASSWORD=${{ env.MONGODB_ADMIN_PASSWORD }}" >> .env
+          echo "MONGODB_DATABASE=${{ env.MONGODB_DATABASE }}" >> .env
 
       - name: Setup Ansible
         run: |
