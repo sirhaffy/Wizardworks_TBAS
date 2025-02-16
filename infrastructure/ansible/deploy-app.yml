@@ -3,10 +3,7 @@
   become: yes
   vars:
     build_version: "{{ lookup('env', 'GITHUB_SHA') | default(lookup('pipe', 'date +%Y%m%d%H%M%S'), true) }}"
-    debug_mode: "{{ lookup('env', 'DEBUG_MODE') | default(false) }}"
   tasks:
-
-    # Debug
     - name: Kontrollera att nödvändiga filer och mappar finns
       stat:
         path: "{{ item }}"
@@ -15,7 +12,6 @@
         - /app/Frontend
         - /app/docker-compose.yml
 
-    # Debug
     - name: Stoppa om Frontend-mappen saknas
       fail:
         msg: "Frontend directory is missing"
@@ -27,34 +23,6 @@
         state: absent
         remove_volumes: true
       ignore_errors: yes
-
-    - name: Rensa Frontend build-cache
-      file:
-        path: "{{ item }}"
-        state: absent
-      with_items:
-        - /app/Frontend/dist
-        - /app/Frontend/node_modules
-        - /app/Frontend/.cache
-
-    - name: Installera Node.js och npm
-      apt:
-        name:
-          - nodejs
-          - npm
-        state: present
-        update_cache: yes
-
-    - name: Installera Yarn globalt
-      npm:
-        name: yarn
-        global: yes
-        state: present
-
-    - name: Installera Frontend dependencies
-      command: yarn install --frozen-lockfile
-      args:
-        chdir: /app/Frontend
 
     - name: Skapa Backend .env-fil
       copy:
@@ -76,32 +44,6 @@
           VITE_BUILD_VERSION="{{ build_version }}"
         dest: /app/Frontend/.env
         mode: '0600'
-
-    - name: Bygg Frontend
-      command: yarn build --mode production
-      args:
-        chdir: /app/Frontend
-      environment:
-        VITE_API_BASE_URL: "http://{{ lookup('env', 'AZURE_VM_IP') }}/api"
-        VITE_API_KEY: "{{ lookup('env', 'API_KEY') }}"
-        VITE_BUILD_VERSION: "{{ build_version }}"
-
-    # Debug
-    - name: Verifiera Frontend build
-      shell: |
-        if grep -q "Using configuration" /app/Frontend/dist/**/*.js || \
-           grep -q "API Base URL" /app/Frontend/dist/**/*.js || \
-           grep -q "API Key" /app/Frontend/dist/**/*.js; then
-          echo "Frontend build contains debug lines" && exit 1
-        fi
-      register: frontend_verify
-      ignore_errors: yes
-
-    # Debug
-    - name: Visa varning om Frontend verifiering misslyckades
-      debug:
-        msg: "WARNING: Frontend build may contain debug lines"
-      when: frontend_verify.rc != 0
 
     - name: Bygg och starta upp Docker Compose v2
       community.docker.docker_compose_v2:
