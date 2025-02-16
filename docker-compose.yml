@@ -23,7 +23,7 @@ services:
       context: .
       dockerfile: Backend/Dockerfile
       args:
-        CACHE_BUST: ${CACHE_BUST:-1}
+        BUILD_VERSION: ${BUILD_VERSION:-local}
     ports:
       - "5129:5129"
     depends_on:
@@ -41,7 +41,7 @@ services:
       context: Frontend
       dockerfile: Dockerfile
       args:
-        CACHE_BUST: ${CACHE_BUST:-1}
+        BUILD_VERSION: ${BUILD_VERSION:-local}
     ports:
       - "80:80"
     depends_on:
