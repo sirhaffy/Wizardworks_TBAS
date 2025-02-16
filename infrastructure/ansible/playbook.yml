@@ -66,15 +66,27 @@
             dest: /app/Frontend/.env
             mode: '0600'
 
-    - name: Starta applikationen
+    - name: Starta Docker Compose
       community.docker.docker_compose_v2:
         project_src: /app
         files:
           - docker-compose.yml
-        build: never  # Använd redan byggda artefakter
+        build: always
         pull: always
         remove_orphans: true
         state: present
         env_files:
           - /app/.env
           - /app/Frontend/.env
+
+    - name: Verifiera Frontend build
+      shell: |
+        echo "Kontrollerar byggda filer..."
+        docker exec tbas_frontend find /usr/share/nginx/html -type f -name "*.js" -exec grep -l "localhost" {} \;
+      register: build_check
+      ignore_errors: yes
+
+    - name: Visa varning om localhost hittas
+      debug:
+        msg: "VARNING: localhost hittades i följande filer: {{ build_check.stdout_lines }}"
+      when: build_check.stdout != ""
