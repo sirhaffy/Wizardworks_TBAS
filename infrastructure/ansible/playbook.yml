@@ -9,6 +9,12 @@
       register: app_dir
       failed_when: not app_dir.stat.exists
 
+    - name: Rensa gamla filer
+      shell: |
+        cd /app
+        rm -rf Frontend/src/* Backend/src/*
+      ignore_errors: yes
+
     - name: Synka applikationskod
       synchronize:
         src: ../../../.
@@ -18,7 +24,19 @@
           - "--exclude=.github"
           - "--exclude=node_modules"
           - "--exclude=infrastructure"
+          - "--delete"
       delegate_to: localhost
+
+    # Debug: Verifiera att filen är uppdaterad
+    - name: Verifiera App.jsx
+      shell: |
+        echo "=== App.jsx innehåll ==="
+        cat /app/Frontend/src/App.jsx
+      register: app_jsx_content
+
+    - name: Visa App.jsx innehåll
+      debug:
+        var: app_jsx_content.stdout_lines
 
     - name: Konfigurera miljöfiler
       block:
