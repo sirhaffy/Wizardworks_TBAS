@@ -1,23 +1,20 @@
 FROM node:20-alpine AS build
-WORKDIR /app
+WORKDIR /app/Frontend
 
-# Kopiera package.json först för bättre cache
-COPY package.json yarn.lock ./
+# Copy package.json and yarn.lock
+COPY Frontend/package.json Frontend/yarn.lock ./
+
 RUN yarn install --frozen-lockfile
 
-# Kopiera resten av filerna
-COPY . .
-ARG VITE_API_BASE_URL
-ARG VITE_API_KEY
-ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
-ENV VITE_API_KEY=${VITE_API_KEY}
+# Copy the rest of the frontend files
+COPY Frontend ./
 
-# Bygg applikationen
+# Build the application
 RUN yarn build
 
-# Produktionsimage
+# Production image
 FROM nginx:alpine
-COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/Frontend/dist /usr/share/nginx/html
+COPY Frontend/nginx.conf /etc/nginx/nginx.conf
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
