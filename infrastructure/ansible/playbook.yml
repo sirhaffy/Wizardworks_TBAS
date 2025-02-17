@@ -3,19 +3,22 @@
   hosts: app_server
   become: yes
   tasks:
+
+    # Debug
     - name: Verifiera app-mapp
       stat:
         path: /app
       register: app_dir
       failed_when: not app_dir.stat.exists
 
+    # Rensa gamla filer
     - name: Rensa gamla filer
       shell: |
         cd /app
         rm -rf Frontend/src/* Backend/src/*
       ignore_errors: yes
 
-    # Debug: Visa källmapp
+    # Debug
     - name: Debug källmapp
       delegate_to: localhost
       shell: |
@@ -23,43 +26,57 @@
         ls -la ../../
       register: source_debug
 
+    # Debug
     - name: Visa källmapp
       debug:
         var: source_debug.stdout_lines
 
-    - name: Synka applikationskod
-      synchronize:
-        src: ../../
-        dest: /app/
-        rsync_opts:
-          - "--exclude=.git"
-          - "--exclude=.github"
-          - "--exclude=node_modules"
-          - "--exclude=infrastructure"
-          - "--delete"
-      delegate_to: localhost
+    # Debug
+    - name: Skapa nödvändiga mappar
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      with_items:
+        - /app/Frontend
+        - /app/Backend
+        - /app/Frontend/src
 
-    # Debug: Verifiera att filen är uppdaterad
-    - name: Verifiera filstruktur
+    # Kopiera filerna
+    - name: Kopiera applikationskod
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+      with_items:
+        - { src: '../../Frontend/', dest: '/app/Frontend/' }
+        - { src: '../../Backend/', dest: '/app/Backend/' }
+        - { src: '../../docker-compose.yml', dest: '/app/docker-compose.yml' }
+        - { src: '../../mongo-init.js', dest: '/app/mongo-init.js' }
+
+    # Debug
+    - name: Verifiera kopiering
       shell: |
-        echo "=== /app innehåll ==="
+        echo "=== App struktur ==="
         ls -la /app
-        echo "=== /app/Frontend innehåll ==="
-        ls -la /app/Frontend || echo "Frontend mapp saknas"
-        echo "=== /app/Frontend/src innehåll ==="
-        ls -la /app/Frontend/src || echo "src mapp saknas"
-      register: file_structure
+        echo "=== Frontend innehåll ==="
+        ls -la /app/Frontend
+        echo "=== Frontend/src innehåll ==="
+        ls -la /app/Frontend/src
+      register: copy_verify
 
-    - name: Visa filstruktur
+    # Debug
+    - name: Visa verifiering
       debug:
-        var: file_structure.stdout_lines
+        var: copy_verify.stdout_lines
 
+    # Debug
     - name: Verifiera App.jsx
       shell: |
         echo "=== App.jsx innehåll ==="
         cat /app/Frontend/src/App.jsx || echo "App.jsx saknas"
       register: app_jsx_content
 
+    # Konfigurera miljöfiler
     - name: Konfigurera miljöfiler
       block:
 
@@ -82,6 +99,7 @@
             dest: /app/Frontend/.env
             mode: '0600'
 
+    # Rensa Docker
     - name: Cleanup Docker
       shell: |
         cd /app
@@ -89,6 +107,7 @@
         docker system prune -af --volumes
         rm -rf Frontend/node_modules Frontend/dist Backend/bin Backend/obj
 
+    # Bygg och starta med Docker Compose
     - name: Bygg och starta med Docker Compose
       shell: |
         cd /app
@@ -97,6 +116,7 @@
         docker compose up -d
       register: compose_result
 
+    # Vänta på att containers ska starta
     - name: Vänta på att containers ska starta
       pause:
         seconds: 15
@@ -111,6 +131,7 @@
         docker logs tbas_backend --tail 50
       register: container_status
 
+    # Debug
     - name: Display container status
       debug:
         var: container_status.stdout_lines
