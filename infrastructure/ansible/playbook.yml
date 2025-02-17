@@ -104,11 +104,23 @@
           copy:
             content: |
               VITE_API_BASE_URL="http://{{ lookup('env', 'AZURE_VM_IP') }}/api"
-              VITE_API_KEY="{{ lookup('env', 'API_KEY') }}"
-              # VITE_API_BASE_URL="https://{{ lookup('env', 'AZURE_VM_IP') }}/api"
-              # VITE_API_KEY="{{ lookup('env', 'API_KEY') }}"
+              API_KEY="{{ lookup('env', 'API_KEY') }}"
             dest: /app/Frontend/.env
             mode: '0600'
+
+        # Debug: Efter Frontend .env steget
+        - name: Verifiera Frontend .env i Docker
+          shell: |
+            cd /app
+            echo "=== Frontend .env innehåll ==="
+            cat Frontend/.env || echo ".env saknas"
+            echo "=== Docker container env ==="
+            docker exec tbas_frontend env | grep VITE
+          register: env_debug
+
+        - name: Visa env debug
+          debug:
+            var: env_debug.stdout_lines
 
     # Rensa Docker
     - name: Cleanup Docker
