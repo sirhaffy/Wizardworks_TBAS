@@ -15,6 +15,6 @@ RUN yarn build
 # Production image
 FROM nginx:alpine
 COPY --from=build /app/Frontend/dist /usr/share/nginx/html
-COPY Frontend/nginx.conf /etc/nginx/nginx.conf
+COPY Frontend/nginx-default.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
