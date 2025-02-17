@@ -1,5 +1,5 @@
 ﻿---
-- name: Deploy TBAS Application
+- name: Deploy Application
   hosts: app_server
   become: yes
   tasks:
@@ -9,8 +9,20 @@
       register: app_dir
       failed_when: not app_dir.stat.exists
 
+    - name: Synka applikationskod
+      synchronize:
+        src: ../../../.
+        dest: /app/
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=.github"
+          - "--exclude=node_modules"
+          - "--exclude=infrastructure"
+      delegate_to: localhost
+
     - name: Konfigurera miljöfiler
       block:
+
         - name: Backend .env
           copy:
             content: |
@@ -30,14 +42,35 @@
             dest: /app/Frontend/.env
             mode: '0600'
 
-    - name: Bygg och starta med Docker Compose
+    - name: Cleanup Docker
       shell: |
         cd /app
         docker compose down
-        docker compose build --no-cache
+        docker system prune -af --volumes
+        rm -rf Frontend/node_modules Frontend/dist Backend/bin Backend/obj
+
+    - name: Bygg och starta med Docker Compose
+      shell: |
+        cd /app
+        echo "Starting fresh build at $(date)"
+        docker compose build --no-cache --pull
         docker compose up -d
       register: compose_result
 
     - name: Vänta på att containers ska starta
       pause:
         seconds: 15
+
+    # Debug
+    - name: Verifiera containers
+      shell: |
+        echo "=== Container status ==="
+        docker ps -a
+        echo "=== Container logs ==="
+        docker logs tbas_frontend --tail 50
+        docker logs tbas_backend --tail 50
+      register: container_status
+
+    - name: Display container status
+      debug:
+        var: container_status.stdout_lines

@@ -52,14 +52,3 @@ jobs:
           VITE_API_BASE_URL: "/api"
           VITE_API_KEY: "${{ secrets.API_KEY }}"
         run: yarn build
-
-      # Debug : Verify App.jsx contains required config
-      - name: Verify App.jsx rebuild
-        run: |
-          if grep -q "Using configuration" Frontend/src/App.jsx || \
-            grep -q "API Base URL" Frontend/src/App.jsx || \
-            grep -q "API Key" Frontend/src/App.jsx; then
-            echo "❌ dev: App.jsx still contains debug lines - build failed to update" && exit 1
-          else
-            echo "✅ dev: App.jsx has been properly rebuilt"
-          fi

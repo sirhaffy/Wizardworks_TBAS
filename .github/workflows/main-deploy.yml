@@ -84,7 +84,7 @@ jobs:
 
   deploy:
     name: Deploy to Azure
-    needs: infrastructure
+    needs: [build, infrastructure]
     runs-on: ubuntu-latest
     env:
       MONGODB_URI: mongodb://appuser:${{ secrets.MONGODB_PASSWORD }}@mongodb:27017/tbas_db?authSource=admin
@@ -99,21 +99,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Setup Dependencies
+        run: |
+          sudo apt-get update
+          DEBIAN_FRONTEND=noninteractive sudo apt-get install -y rsync
+
       - name: Setup Ansible
         run: |
           sudo apt-add-repository --yes --update ppa:ansible/ansible
           DEBIAN_FRONTEND=noninteractive sudo apt-get install -y ansible
-
-      - name: Force clean before deploy
-        run: |
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key
-          chmod 600 ssh_key
-          ssh -i ssh_key -o StrictHostKeyChecking=no azureuser@${{ secrets.AZURE_VM_IP }} '
-            cd /app
-            docker compose down
-            docker system prune -af --volumes
-            rm -rf Frontend/node_modules Frontend/dist
-          '
 
       - name: Run Ansible Playbook
         working-directory: infrastructure/ansible
