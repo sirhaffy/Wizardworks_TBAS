@@ -4,6 +4,8 @@
 # Extra
 .secrets
 .env.local
+
+# Docker Compose Locally
 .env
 
 ### react ###

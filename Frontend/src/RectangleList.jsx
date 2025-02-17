@@ -33,27 +33,27 @@ const RectangleList = ({ refresh }) => {
     return (
         <div className="rectangle-container">
 
-            {error && <p className="error-message">{error}</p>}
-            {!error && rectangles.length === 0 && <p>No squares to display.</p>}
 
             <div className="rectangle-columns">
                 {Object.entries(groupedRectangles).map(([columnIndex, columnRectangles]) => (
                     <div
                         key={columnIndex}
                         className="rectangle-column"
-                    >
+                        >
                         {columnRectangles.map((rect, index) => (
                             <div
-                                key={rect.id || index}
-                                className="rectangle rectangle-effect"
-                                style={{
-                                    backgroundColor: rect.color // Set the rectangle color.
-                                }}
+                            key={rect.id || index}
+                            className="rectangle rectangle-effect"
+                            style={{
+                                backgroundColor: rect.color
+                            }}
                             />
                         ))}
                     </div>
                 ))}
             </div>
+                {error && <p className="error-message">{error}</p>}
+                {!error && rectangles.length === 0 && <p>No squares to display.</p>}
         </div>
     );
 };

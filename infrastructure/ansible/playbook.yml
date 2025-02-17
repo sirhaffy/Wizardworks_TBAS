@@ -103,8 +103,8 @@
         - name: Frontend .env
           copy:
             content: |
-              VITE_API_BASE_URL="http://{{ lookup('env', 'AZURE_VM_IP') }}/api"
-              API_KEY="{{ lookup('env', 'API_KEY') }}"
+              VITE_API_KEY="{{ lookup('env', 'API_KEY') }}"
+              VITE_AZURE_VM_IP="{{ lookup('env', 'AZURE_VM_IP') }}"
             dest: /app/Frontend/.env
             mode: '0600'
 

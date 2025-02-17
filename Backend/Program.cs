@@ -5,9 +5,28 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.OpenApi.Models;
 using DotNetEnv;
 
-Env.Load("../.env");
-
 var builder = WebApplication.CreateBuilder(args);
+
+// Ladda ../.env i utvecklingsmiljö
+if (builder.Environment.IsDevelopment())
+{
+    var envPath = Path.Combine(builder.Environment.ContentRootPath, "..", ".env");
+    if (File.Exists(envPath))
+    {
+        Env.Load(envPath);
+        builder.Configuration.AddEnvironmentVariables();
+    }
+    else
+    {
+        Console.WriteLine("Warning: .env file not found at ../.env");
+    }
+}
+
+// I production används GitHub Secrets via environment variables
+if (builder.Environment.IsProduction())
+{
+    builder.Configuration.AddEnvironmentVariables();
+}
 
 // Service Configuration
 ConfigureServices(builder.Services, builder.Configuration, builder.Environment, builder.Logging);
@@ -58,9 +77,9 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     {
         options.AddPolicy("AllowSpecificOrigins", policy =>
         {
-            var appIp = Environment.GetEnvironmentVariable("APP_IP");
+            var appIp = configuration["AZURE_VM_IP"] ?? Environment.GetEnvironmentVariable("AZURE_VM_IP");
 
-            var origins = environment.EnvironmentName.ToLower() == "production"
+            var origins = string.Equals(environment.EnvironmentName, "production", StringComparison.OrdinalIgnoreCase)
                 ? new[] { $"http://{appIp}" }
                 : new[] {
                     "http://localhost:5173",  // Vite default
@@ -72,17 +91,13 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
             // Validera att vi har giltiga origins i production
             if (environment.EnvironmentName.ToLower() == "production" && string.IsNullOrEmpty(appIp))
             {
-                throw new InvalidOperationException("APP_IP environment variable is required in production");
+                throw new InvalidOperationException("AZURE_VM_IP environment variable is required in production");
             }
 
             policy.WithOrigins(origins)
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();
-
-            // Använd logging direkt från ILoggingBuilder istället för app.Logger
-            var logger = logging.Services.BuildServiceProvider().GetRequiredService<ILogger<Program>>();
-            logger.LogInformation("CORS configured with origins: {@Origins}", origins);
         });
     });
 
