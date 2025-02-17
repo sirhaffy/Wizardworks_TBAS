@@ -23,6 +23,7 @@ services:
       - CORS_METHODS=GET,POST,OPTIONS,DELETE
       - CORS_ALLOWED_HEADERS=Content-Type,Authorization
       - CORS_EXPOSED_HEADERS=Content-Length,Content-Range
+      - MONGODB_HOST=mongodb
     build:
       context: .
       dockerfile: Backend/Dockerfile

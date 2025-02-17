@@ -10,7 +10,7 @@ Env.Load("../.env");
 var builder = WebApplication.CreateBuilder(args);
 
 // Service Configuration
-ConfigureServices(builder.Services, builder.Configuration);
+ConfigureServices(builder.Services, builder.Configuration, builder.Environment, builder.Logging);
 
 var app = builder.Build();
 
@@ -19,7 +19,7 @@ ConfigureMiddleware(app);
 
 app.Run();
 
-void ConfigureServices(IServiceCollection services, IConfiguration configuration)
+void ConfigureServices(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment, ILoggingBuilder logging)
 {
     // Basic Services
     services.AddControllers();
@@ -58,20 +58,31 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     {
         options.AddPolicy("AllowSpecificOrigins", policy =>
         {
-            var environment = builder.Environment.EnvironmentName;
-            var origins = environment.ToLower() == "production"
-                ? new[] { $"http://{Environment.GetEnvironmentVariable("APP_IP")}" }
+            var appIp = Environment.GetEnvironmentVariable("APP_IP");
+
+            var origins = environment.EnvironmentName.ToLower() == "production"
+                ? new[] { $"http://{appIp}" }
                 : new[] {
-                    "http://localhost:5173",
-                    "http://localhost:3000",
+                    "http://localhost:5173",  // Vite default
+                    "http://localhost:3000",  // React default
                     "http://localhost",
                     "http://localhost:80"
                 };
 
+            // Validera att vi har giltiga origins i production
+            if (environment.EnvironmentName.ToLower() == "production" && string.IsNullOrEmpty(appIp))
+            {
+                throw new InvalidOperationException("APP_IP environment variable is required in production");
+            }
+
             policy.WithOrigins(origins)
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials();
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+
+            // Använd logging direkt från ILoggingBuilder istället för app.Logger
+            var logger = logging.Services.BuildServiceProvider().GetRequiredService<ILogger<Program>>();
+            logger.LogInformation("CORS configured with origins: {@Origins}", origins);
         });
     });
 

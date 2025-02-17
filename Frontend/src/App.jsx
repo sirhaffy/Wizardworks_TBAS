@@ -7,8 +7,14 @@ import './styling/main.css';
 const App = () => {
     const [shouldRefresh, setShouldRefresh] = useState(false);
 
-    const handleRectangleCreated = () => {
-        setShouldRefresh(prev => !prev);
+    const handleRectangleCreated = async () => {
+
+        return new Promise((resolve) => {
+            setShouldRefresh(prev => {
+                resolve();
+                return prev + 1;
+            });
+        });
     };
 
     return (
