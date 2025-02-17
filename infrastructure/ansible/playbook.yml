@@ -9,14 +9,7 @@
       stat:
         path: /app
       register: app_dir
-      failed_when: not app_dir.stat.exists
-
-    # Rensa gamla filer
-    - name: Rensa gamla filer
-      shell: |
-        cd /app
-        rm -rf Frontend/src/* Backend/src/*
-      ignore_errors: yes
+      failed_when: not app_dir.exists
 
     # Debug
     - name: Debug källmapp
@@ -31,27 +24,25 @@
       debug:
         var: source_debug.stdout_lines
 
-    # Debug
-    - name: Skapa nödvändiga mappar
-      file:
-        path: "{{ item }}"
-        state: directory
-        mode: '0755'
-      with_items:
-        - /app/Frontend
-        - /app/Backend
-        - /app/Frontend/src
+    # Rensa gamla filer
+    - name: Rensa gamla filer
+      shell: |
+        cd /app
+        rm -rf Frontend/* Backend/* *.sln *.yml *.js .env
+      ignore_errors: yes
 
-    # Kopiera filerna
+    # Kopiera alla filer med rsync
     - name: Kopiera applikationskod
-      copy:
-        src: "{{ item.src }}"
-        dest: "{{ item.dest }}"
-      with_items:
-        - { src: '../../Frontend/', dest: '/app/Frontend/' }
-        - { src: '../../Backend/', dest: '/app/Backend/' }
-        - { src: '../../docker-compose.yml', dest: '/app/docker-compose.yml' }
-        - { src: '../../mongo-init.js', dest: '/app/mongo-init.js' }
+      synchronize:
+        src: ../../
+        dest: /app/
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=.github"
+          - "--exclude=node_modules"
+          - "--exclude=infrastructure"
+        delete: yes
+      delegate_to: localhost
 
     # Debug
     - name: Verifiera kopiering
@@ -79,7 +70,6 @@
     # Konfigurera miljöfiler
     - name: Konfigurera miljöfiler
       block:
-
         - name: Backend .env
           copy:
             content: |
