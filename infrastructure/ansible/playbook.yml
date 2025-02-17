@@ -45,7 +45,7 @@
           - "--exclude=infrastructure"
           - "--exclude=ansible"
           - "--exclude=terraform"
-          - "--chown=1001:docker"
+          - "--chown=azureuser:docker"
         delete: yes
       delegate_to: localhost
 
