@@ -9,7 +9,7 @@
       stat:
         path: /app
       register: app_dir
-      failed_when: not app_dir.exists
+      failed_when: not app_dir.stat.exists
 
     # Debug
     - name: Debug källmapp
@@ -28,7 +28,9 @@
     - name: Rensa gamla filer
       shell: |
         cd /app
-        rm -rf Frontend/* Backend/* *.sln *.yml *.js .env
+        sudo rm -rf Frontend/* Backend/*
+        sudo rm -f *.sln *.yml docker-compose.yml mongo-init.js .env
+        sudo chown -R 1001:docker .
       ignore_errors: yes
 
     # Kopiera alla filer med rsync
@@ -41,6 +43,9 @@
           - "--exclude=.github"
           - "--exclude=node_modules"
           - "--exclude=infrastructure"
+          - "--exclude=ansible"
+          - "--exclude=terraform"
+          - "--chown=1001:docker"
         delete: yes
       delegate_to: localhost
 
