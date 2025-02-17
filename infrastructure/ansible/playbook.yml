@@ -36,7 +36,7 @@
     # Kopiera alla filer med rsync
     - name: Kopiera applikationskod
       synchronize:
-        src: ../../
+        src: "{{ playbook_dir }}/../../"  # Använd absolut sökväg
         dest: /app/
         rsync_opts:
           - "--exclude=.git"
@@ -48,6 +48,20 @@
           - "--chown=1001:docker"
         delete: yes
       delegate_to: localhost
+
+    # Lägg till ett steg för att verifiera källan
+    - name: Debug rsync source
+      delegate_to: localhost
+      shell: |
+        echo "Current directory: $(pwd)"
+        echo "Playbook directory: {{ playbook_dir }}"
+        echo "Source content:"
+        ls -la {{ playbook_dir }}/../../
+      register: rsync_debug
+
+    - name: Display rsync debug
+      debug:
+        var: rsync_debug.stdout_lines
 
     # Debug
     - name: Verifiera kopiering
