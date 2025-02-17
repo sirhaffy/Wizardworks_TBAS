@@ -1,5 +1,9 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const API_KEY = import.meta.env.VITE_API_KEY;
+const API_KEY = import.meta.env.API_KEY;
+
+// Välj API URL baserat på miljö
+const API_BASE_URL = import.meta.env.MODE === 'development'
+    ? 'http://localhost:5129/api'
+    : `http://${import.meta.env.AZURE_VM_IP}/api`;
 
 class APIError extends Error {
     constructor(message, status = null) {
@@ -11,15 +15,18 @@ class APIError extends Error {
 
 const checkEnvironmentVariables = () => {
     const missing = [];
-    if (!API_BASE_URL) missing.push('VITE_API_BASE_URL');
-    if (!API_KEY) missing.push('VITE_API_KEY');
+    if (!API_KEY) missing.push('API_KEY');
+    if (import.meta.env.MODE !== 'development' && !import.meta.env.AZURE_VM_IP) {
+        missing.push('AZURE_VM_IP');
+    }
 
     if (missing.length > 0) {
         console.error('Missing environment variables:', missing);
         console.log('Current environment:', {
             NODE_ENV: import.meta.env.MODE,
             BASE_URL: API_BASE_URL ? '[SET]' : '[MISSING]',
-            API_KEY: API_KEY ? '[SET]' : '[MISSING]'
+            API_KEY: API_KEY ? '[SET]' : '[MISSING]',
+            AZURE_VM_IP: import.meta.env.AZURE_VM_IP ? '[SET]' : '[MISSING]'
         });
         return false;
     }

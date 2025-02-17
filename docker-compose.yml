@@ -5,9 +5,9 @@ services:
     ports:
       - "27017:27017"
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGODB_ADMIN}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_ADMIN_PASSWORD}
-      - MONGO_INITDB_DATABASE=${MONGODB_DATABASE}
+      MONGODB_ADMIN: ${MONGODB_ADMIN}
+      MONGODB_ADMIN_PASSWORD: ${MONGODB_ADMIN_PASSWORD}
+      MONGODB_DATABASE: ${MONGODB_DATABASE}
     volumes:
       - mongodb_tbas_data:/data/db
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
@@ -17,22 +17,22 @@ services:
 
   backend:
     container_name: tbas_backend
-    environment:
-      - CORS_ENABLED=true
-      - CORS_ORIGIN=http://13.94.108.141
-      - CORS_METHODS=GET,POST,OPTIONS,DELETE
-      - CORS_ALLOWED_HEADERS=Content-Type,Authorization
-      - CORS_EXPOSED_HEADERS=Content-Length,Content-Range
-      - MONGODB_HOST=mongodb
     build:
       context: .
       dockerfile: Backend/Dockerfile
+    environment:
+      CORS_ENABLED: "true"
+      CORS_ORIGIN: "http://${AZURE_VM_IP}"
+      CORS_METHODS: "GET,POST,OPTIONS,DELETE"
+      CORS_ALLOWED_HEADERS: "Content-Type,Authorization"
+      CORS_EXPOSED_HEADERS: "Content-Length,Content-Range"
+      MONGODB_HOST: "mongodb"
+      API_KEY: ${API_KEY}
+      MONGODB_URI: ${MONGODB_URI}
     ports:
       - "5129:5129"
     depends_on:
       - mongodb
-    env_file:
-      - .env
     networks:
       - tbas_network
     restart: unless-stopped
@@ -42,12 +42,16 @@ services:
     build:
       context: .
       dockerfile: Frontend/Dockerfile
+      args:
+        - API_KEY=${API_KEY}
+        - AZURE_VM_IP=${AZURE_VM_IP}
+    environment:
+      - API_KEY=${API_KEY}
+      - AZURE_VM_IP=${AZURE_VM_IP}
     ports:
       - "80:80"
     depends_on:
       - backend
-    env_file:
-      - Frontend/.env
     networks:
       - tbas_network
     restart: unless-stopped

@@ -4,6 +4,7 @@
 # Extra
 .secrets
 .env.local
+.env
 
 ### react ###
 .DS_*
