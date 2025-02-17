@@ -14,7 +14,7 @@ const App = () => {
     return (
         <ErrorBoundary>
             <div className="app-container">
-                <h1>Rectangle Manager v10</h1>
+                <h1>Rectangle Manager v11</h1>
                 <CreateRectangle onRectangleCreated={handleRectangleCreated} />
                 <RectangleList refresh={shouldRefresh} />
             </div>
