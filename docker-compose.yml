@@ -17,6 +17,12 @@ services:
 
   backend:
     container_name: tbas_backend
+    environment:
+      - CORS_ENABLED=true
+      - CORS_ORIGIN=http://13.94.108.141
+      - CORS_METHODS=GET,POST,OPTIONS,DELETE
+      - CORS_ALLOWED_HEADERS=Content-Type,Authorization
+      - CORS_EXPOSED_HEADERS=Content-Length,Content-Range
     build:
       context: .
       dockerfile: Backend/Dockerfile
