@@ -3,7 +3,7 @@ using MongoDB.Driver;
 
 namespace Backend.Services;
 
-public class MongoService : IMongoService
+    public class MongoService : IMongoService
 {
     private readonly IMongoDatabase _database;
     private readonly ILogger<MongoService> _logger;
@@ -14,25 +14,26 @@ public class MongoService : IMongoService
         _logger = logger;
         try
         {
-            var connectionString = config.GetValue<string>("MongoDB:ConnectionString");
-            var databaseName = config.GetValue<string>("MongoDB:DatabaseName");
+            // Hämta host från miljövariabel
+            var host = Environment.GetEnvironmentVariable("MONGODB_HOST") ?? "localhost";
+            _logger.LogInformation("Using MongoDB host: {Host}", host);
+
+            // Hämta användarnamn och lösenord från config eller miljövariabler
+            var user = Environment.GetEnvironmentVariable("MONGODB_USER") ?? "appuser";
+            var password = Environment.GetEnvironmentVariable("MONGODB_PASSWORD") ?? "apppassword";
+            var databaseName = config.GetValue<string>("MongoDB:DatabaseName") ?? "tbas_db";
+
+            var connectionString = $"mongodb://{user}:{password}@{host}:27017/{databaseName}?authSource=admin";
 
             _logger.LogInformation("Attempting to connect to MongoDB...");
-            // Undvik att logga hela connection string av säkerhetsskäl
             _logger.LogInformation("Using database: {DatabaseName}", databaseName);
 
-            if (string.IsNullOrEmpty(connectionString))
-                throw new ArgumentNullException(nameof(connectionString), "MongoDB connection string is missing");
-
-            if (string.IsNullOrEmpty(databaseName))
-                throw new ArgumentNullException(nameof(databaseName), "MongoDB database name is missing");
-
             var settings = MongoClientSettings.FromConnectionString(connectionString);
-            settings.ServerSelectionTimeout = TimeSpan.FromSeconds(5); // Lägg till timeout
+            settings.ServerSelectionTimeout = TimeSpan.FromSeconds(15); // Öka timeout
             _client = new MongoClient(settings);
             _database = _client.GetDatabase(databaseName);
 
-            // Testa anslutningen med timeout
+            // Testa anslutningen
             var pingCommand = new MongoDB.Bson.BsonDocument("ping", 1);
             var pingResult = _database.RunCommand<MongoDB.Bson.BsonDocument>(pingCommand);
 

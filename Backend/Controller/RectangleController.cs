@@ -22,8 +22,21 @@ public class RectangleController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<Rectangle>>> GetAll() =>
-        await _rectangleService.GetAll();
+    public async Task<ActionResult<List<Rectangle>>> GetAll()
+    {
+        try
+        {
+            _logger.LogInformation("Getting all rectangles");
+            var rectangles = await _rectangleService.GetAll();
+            _logger.LogInformation("Successfully retrieved {Count} rectangles", rectangles.Count);
+            return Ok(rectangles);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting rectangles");
+            return StatusCode(500, new { error = "An error occurred while retrieving rectangles", details = ex.Message });
+        }
+    }
 
     [HttpPost]
     public async Task<ActionResult<Rectangle>> Add(Rectangle rectangle)

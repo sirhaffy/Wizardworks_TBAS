@@ -42,6 +42,7 @@ public class RectangleApiEndpointTests : IDisposable
 
         // Assert
         VerifyHttpResponse(result, expectedRectangle);
+        _mockRectangleService.Verify(service => service.GetAll(), Times.Once);
     }
 
     // Testing to add a rectangle to the service and return the created rectangle.
@@ -111,8 +112,9 @@ public class RectangleApiEndpointTests : IDisposable
     // Verifies that the HTTP response contains the expected rectangle.
     private void VerifyHttpResponse(ActionResult<List<Rectangle>> result, Rectangle expected)
     {
-        var actionResult = Assert.IsType<ActionResult<List<Rectangle>>>(result);
-        var rectangles = Assert.IsType<List<Rectangle>>(actionResult.Value);
+        // Hämta OkObjectResult från Result
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var rectangles = Assert.IsType<List<Rectangle>>(okResult.Value);
         Assert.Single(rectangles);
 
         var rectangle = rectangles[0];
@@ -121,7 +123,7 @@ public class RectangleApiEndpointTests : IDisposable
         Assert.Equal(expected.X, rectangle.X);
         Assert.Equal(expected.Y, rectangle.Y);
     }
-
+    
     // Verifies that the HTTP response contains the expected rectangle.
     private void VerifyRectangleResponse(ActionResult<Rectangle> result)
     {

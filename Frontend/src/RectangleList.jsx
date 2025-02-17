@@ -7,26 +7,22 @@ const RectangleList = ({ refresh }) => {
 
     // Fetch rectangles when the component mounts or when 'refresh' changes.
     useEffect(() => {
-        fetchRectangles().then(r => r);
+        const fetchRectangles = async () => {
+            try {
+                const data = await apiFetch('/rectangle');
+                const sortedData = data.sort((a, b) => (a.x !== b.x ? a.x - b.x : a.y - b.y));
+                setRectangles(sortedData);
+            } catch (error) {
+                console.error('Error fetching rectangles:', error);
+                setError(error.message.includes('Cannot connect to the server')
+                    ? 'The database is unreachable. Please check if the server is running.'
+                    : 'Failed to fetch rectangles. Please try again later.');
+            }
+        };
+
+        fetchRectangles();
     }, [refresh]);
 
-    // Fetch rectangles from the API and sort them.
-    const fetchRectangles = async () => {
-        try {
-            const data = await apiFetch('/rectangle');
-            const sortedData = data.sort((a, b) => (a.x !== b.x ? a.x - b.x : a.y - b.y));
-            setRectangles(sortedData);
-        } catch (error) {
-            console.error('Error fetching rectangles:', error);
-
-            if (error.message.includes('Cannot connect to the server')) {
-                setError('The database is unreachable. Please check if the server is running.');
-            } else {
-                setError('Failed to fetch rectangles. Please try again later.');
-            }
-        }
-    };
-    
     // Group rectangles by their x-coordinate (column-based grouping).
     const groupedRectangles = rectangles.reduce((acc, rect) => {
         acc[rect.x] = acc[rect.x] || [];
@@ -36,13 +32,10 @@ const RectangleList = ({ refresh }) => {
 
     return (
         <div className="rectangle-container">
-            
-            {/* Display an error message if fetching fails. */}
-            {error && <p className="error-message">{error}</p>}
 
-            {/* Display a message if there are no squares to display. */}
-            {rectangles.length === 0 && <p>No squares to display.</p>}
-            
+            {error && <p className="error-message">{error}</p>}
+            {!error && rectangles.length === 0 && <p>No squares to display.</p>}
+
             <div className="rectangle-columns">
                 {Object.entries(groupedRectangles).map(([columnIndex, columnRectangles]) => (
                     <div

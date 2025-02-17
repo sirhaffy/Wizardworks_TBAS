@@ -7,14 +7,20 @@ import './styling/main.css';
 const App = () => {
     const [shouldRefresh, setShouldRefresh] = useState(false);
 
-    const handleRectangleCreated = () => {
-        setShouldRefresh(prev => !prev);
+    const handleRectangleCreated = async () => {
+
+        return new Promise((resolve) => {
+            setShouldRefresh(prev => {
+                resolve();
+                return prev + 1;
+            });
+        });
     };
 
     return (
         <ErrorBoundary>
             <div className="app-container">
-                <h1>Rectangle Manager v11</h1>
+                <h1>Rectangle Manager</h1>
                 <CreateRectangle onRectangleCreated={handleRectangleCreated} />
                 <RectangleList refresh={shouldRefresh} />
             </div>
