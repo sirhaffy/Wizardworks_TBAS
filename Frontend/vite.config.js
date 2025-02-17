@@ -5,10 +5,9 @@ export default defineConfig({
   plugins: [react()],
   server: {
     watch: {
-      usePolling: true
-    }
+      usePolling: true // Required for WSL2 and Docker.
+    },
+    cors: true // Required for WSL2 and Docker.
   },
-  define: {
-    'process.env': {}
-  }
+  envPrefix: 'VITE_', // Environment variables prefix for Vite.
 })
