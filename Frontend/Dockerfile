@@ -26,11 +26,8 @@ FROM nginx:alpine
 # Copy the built files
 COPY --from=build /app/Frontend/dist /usr/share/nginx/html
 
-# Copy nginx config
-COPY Frontend/nginx.conf.template /etc/nginx/conf.d/default.conf
-ENV NGINX_ENVSUBST_TEMPLATE_DIR=/etc/nginx/templates
-ENV NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx/conf.d
-ENV AZURE_VM_IP=${AZURE_VM_IP}
+# Copy nginx config direkt till conf.d
+COPY Frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
