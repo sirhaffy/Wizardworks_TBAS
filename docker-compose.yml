@@ -29,6 +29,7 @@ services:
       MONGODB_HOST: "mongodb"
       API_KEY: ${API_KEY}
       MONGODB_URI: ${MONGODB_URI}
+      AZURE_VM_IP: ${AZURE_VM_IP}
     ports:
       - "5129:5129"
     depends_on:
