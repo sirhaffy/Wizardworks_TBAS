@@ -5,6 +5,10 @@ WORKDIR /app/Frontend
 ARG VITE_API_KEY
 ARG VITE_BACKEND_URL
 
+# Miljövariabler för build
+ENV VITE_API_KEY=$VITE_API_KEY
+ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
+
 # Copy package.json and yarn.lock
 COPY Frontend/package.json Frontend/yarn.lock ./
 
@@ -14,8 +18,6 @@ RUN yarn install --frozen-lockfile
 COPY Frontend ./
 
 # Build the application with environment variables
-ENV VITE_API_KEY=$VITE_API_KEY
-ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
 RUN yarn build
 
 # Production image
