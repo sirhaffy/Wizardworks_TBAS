@@ -20,16 +20,15 @@ services:
     build:
       context: .
       dockerfile: Backend/Dockerfile
+    env_file:
+      - .env  # Backend hämtar från huvud-.env
     environment:
-      CORS_ENABLED: "true"
-      CORS_ORIGIN: "http://${AZURE_VM_IP}"
-      CORS_METHODS: "GET,POST,OPTIONS,DELETE"
-      CORS_ALLOWED_HEADERS: "Content-Type,Authorization"
-      CORS_EXPOSED_HEADERS: "Content-Length,Content-Range"
-      MONGODB_HOST: "mongodb"
-      API_KEY: ${API_KEY}
-      MONGODB_URI: ${MONGODB_URI}
-      AZURE_VM_IP: ${AZURE_VM_IP}
+      - CORS_ENABLED=true
+      - CORS_ORIGIN=http://${AZURE_VM_IP}
+      - CORS_METHODS=GET,POST,OPTIONS,DELETE
+      - CORS_ALLOWED_HEADERS=Content-Type,Authorization
+      - CORS_EXPOSED_HEADERS=Content-Length,Content-Range
+      - MONGODB_HOST=mongodb
     ports:
       - "5129:5129"
     depends_on:
@@ -47,9 +46,8 @@ services:
       args:
         - VITE_API_KEY=${API_KEY}
         - VITE_BACKEND_URL=http://${AZURE_VM_IP}/api
-    environment:
-      - VITE_API_KEY=${API_KEY}
-      - VITE_BACKEND_URL=http://${AZURE_VM_IP}/api
+    env_file:
+      - Frontend/.env
     ports:
       - "80:80"
     depends_on:

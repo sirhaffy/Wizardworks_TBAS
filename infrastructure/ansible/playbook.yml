@@ -105,6 +105,7 @@
             content: |
               VITE_API_KEY="{{ lookup('env', 'API_KEY') }}"
               VITE_BACKEND_URL="http://{{ lookup('env', 'AZURE_VM_IP') }}/api"
+              AZURE_VM_IP="{{ lookup('env', 'AZURE_VM_IP') }}"
             dest: /app/Frontend/.env
             mode: '0600'
 
