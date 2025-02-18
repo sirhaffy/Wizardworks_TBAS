@@ -17,23 +17,23 @@ services:
 
   backend:
     container_name: tbas_backend
+    environment:
+      - CORS_ENABLED=true
+      # - CORS_ORIGIN=http://${AZURE_VM_IP}
+      - CORS_ORIGIN=http://13.94.108.141
+      - CORS_METHODS=GET,POST,OPTIONS,DELETE
+      - CORS_ALLOWED_HEADERS=Content-Type,Authorization
+      - CORS_EXPOSED_HEADERS=Content-Length,Content-Range
+      - MONGODB_HOST=mongodb
     build:
       context: .
       dockerfile: Backend/Dockerfile
-    environment:
-      CORS_ENABLED: "true"
-      CORS_ORIGIN: "http://${AZURE_VM_IP}"
-      CORS_METHODS: "GET,POST,OPTIONS,DELETE"
-      CORS_ALLOWED_HEADERS: "Content-Type,Authorization"
-      CORS_EXPOSED_HEADERS: "Content-Length,Content-Range"
-      MONGODB_HOST: "mongodb"
-      API_KEY: ${API_KEY}
-      MONGODB_URI: ${MONGODB_URI}
-      AZURE_VM_IP: ${AZURE_VM_IP}
     ports:
       - "5129:5129"
     depends_on:
       - mongodb
+    env_file:
+      - .env
     networks:
       - tbas_network
     restart: unless-stopped
@@ -44,16 +44,12 @@ services:
     build:
       context: .
       dockerfile: Frontend/Dockerfile
-      args:
-        - VITE_API_KEY=${API_KEY}
-        - VITE_BACKEND_URL=http://${AZURE_VM_IP}/api
-    environment:
-      - VITE_API_KEY=${API_KEY}
-      - VITE_BACKEND_URL=http://${AZURE_VM_IP}/api
     ports:
       - "80:80"
     depends_on:
       - backend
+    env_file:
+      - Frontend/.env
     networks:
       - tbas_network
     restart: unless-stopped
