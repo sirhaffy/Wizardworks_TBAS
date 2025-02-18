@@ -1,7 +1,5 @@
-const API_KEY =  import.meta.env.VITE_API_KEY;
-const BASE_URL = import.meta.env.MODE === 'development'
-    ? 'http://localhost:5129/api'
-    : `http://${import.meta.env.AZURE_VM_IP}/api`;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 class APIError extends Error {
     constructor(message, status = null) {
@@ -13,13 +11,14 @@ class APIError extends Error {
 
 const checkEnvironmentVariables = () => {
     const missing = [];
-    if (!API_KEY) missing.push('API_KEY');
+    if (!API_KEY) missing.push('VITE_API_KEY');
+    if (!API_BASE_URL) missing.push('VITE_API_BASE_URL');
 
     if (missing.length > 0) {
         console.error('Missing environment variables:', missing);
         console.log('Current environment:', {
-            NODE_ENV: import.meta.env.MODE,
-            BASE_URL: BASE_URL,
+            MODE: import.meta.env.MODE,
+            API_BASE_URL: API_BASE_URL,
             API_KEY: API_KEY ? '[SET]' : '[MISSING]'
         });
         return false;
@@ -27,10 +26,9 @@ const checkEnvironmentVariables = () => {
     return true;
 };
 
-
 const checkBackendStatus = async () => {
     try {
-        const response = await fetch(`${BASE_URL}/rectangle`, {
+        const response = await fetch(`${API_BASE_URL}/rectangle`, {
             mode: 'cors',
             headers: {
                 'Accept': 'application/json',
@@ -69,7 +67,7 @@ export const apiFetch = async (endpoint, method = "GET", body = null) => {
             options.body = JSON.stringify(body);
         }
 
-        const response = await fetch(`${BASE_URL}${endpoint}`, options);
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
         const text = await response.text();
 
         if (!response.ok) {
