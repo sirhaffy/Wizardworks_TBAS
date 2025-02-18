@@ -40,7 +40,16 @@
               MONGODB_ADMIN="{{ lookup('env', 'MONGODB_ADMIN') }}"
               MONGODB_ADMIN_PASSWORD="{{ lookup('env', 'MONGODB_ADMIN_PASSWORD') }}"
               MONGODB_DATABASE="{{ lookup('env', 'MONGODB_DATABASE') }}"
+              AZURE_VM_IP="{{ lookup('env', 'AZURE_VM_IP') }}"
+              CORS_ORIGIN="http://{{ lookup('env', 'AZURE_VM_IP') }}"
+              CORS_ENABLED=true
+              CORS_METHODS="GET,POST,OPTIONS,DELETE"
+              CORS_ALLOWED_HEADERS="Content-Type,Authorization"
+              CORS_EXPOSED_HEADERS="Content-Length,Content-Range"
+              MONGODB_HOST=mongodb
             dest: /app/.env
+            owner: azureuser
+            group: docker
             mode: '0600'
 
         - name: Frontend .env
@@ -50,6 +59,8 @@
               VITE_BACKEND_URL="http://{{ lookup('env', 'AZURE_VM_IP') }}/api"
               AZURE_VM_IP="{{ lookup('env', 'AZURE_VM_IP') }}"
             dest: /app/Frontend/.env
+            owner: azureuser
+            group: docker
             mode: '0600'
 
     # Debug: Rensa Docker
@@ -66,6 +77,14 @@
         cd /app
         echo "Starting fresh build at $(date)"
         docker compose build --no-cache --pull
+
+        # Meddelar om bygget lyckades eller inte
+        if [ $? -eq 0 ]; then
+          echo "Build completed successfully at $(date)"
+        else
+          echo "Build failed at $(date)"
+          exit 1
+        fi
         docker compose up -d
       register: compose_result
 
