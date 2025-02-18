@@ -4,26 +4,6 @@
   become: yes
   tasks:
 
-    # Debug
-    - name: Verifiera app-mapp
-      stat:
-        path: /app
-      register: app_dir
-      failed_when: not app_dir.stat.exists
-
-    # Debug
-    - name: Debug källmapp
-      delegate_to: localhost
-      shell: |
-        pwd
-        ls -la ../../
-      register: source_debug
-
-    # Debug
-    - name: Visa källmapp
-      debug:
-        var: source_debug.stdout_lines
-
     # Rensa gamla filer
     - name: Rensa gamla filer
       shell: |
@@ -49,43 +29,6 @@
         delete: yes
       delegate_to: localhost
 
-    # Lägg till ett steg för att verifiera källan
-    - name: Debug rsync source
-      delegate_to: localhost
-      shell: |
-        echo "Current directory: $(pwd)"
-        echo "Playbook directory: {{ playbook_dir }}"
-        echo "Source content:"
-        ls -la {{ playbook_dir }}/../../
-      register: rsync_debug
-
-    - name: Display rsync debug
-      debug:
-        var: rsync_debug.stdout_lines
-
-    # Debug
-    - name: Verifiera kopiering
-      shell: |
-        echo "=== App struktur ==="
-        ls -la /app
-        echo "=== Frontend innehåll ==="
-        ls -la /app/Frontend
-        echo "=== Frontend/src innehåll ==="
-        ls -la /app/Frontend/src
-      register: copy_verify
-
-    # Debug
-    - name: Visa verifiering
-      debug:
-        var: copy_verify.stdout_lines
-
-    # Debug
-    - name: Verifiera App.jsx
-      shell: |
-        echo "=== App.jsx innehåll ==="
-        cat /app/Frontend/src/App.jsx || echo "App.jsx saknas"
-      register: app_jsx_content
-
     # Konfigurera miljöfiler
     - name: Konfigurera miljöfiler
       block:
@@ -109,21 +52,7 @@
             dest: /app/Frontend/.env
             mode: '0600'
 
-        # Debug: Verifiera .env filerna.
-        - name: Verifiera .env filer
-          shell: |
-            cd /app
-            echo "=== Root .env innehåll ==="
-            cat .env
-            echo "=== Frontend .env innehåll ==="
-            cat Frontend/.env
-          register: env_debug
-
-        - name: Visa env debug
-          debug:
-            var: env_debug.stdout_lines
-
-    # Rensa Docker
+    # Debug: Rensa Docker
     - name: Cleanup Docker
       shell: |
         cd /app
@@ -131,7 +60,7 @@
         docker system prune -af --volumes
         rm -rf Frontend/node_modules Frontend/dist Backend/bin Backend/obj
 
-    # Bygg och starta med Docker Compose
+    # Debug: Bygg och starta med Docker Compose
     - name: Bygg och starta med Docker Compose
       shell: |
         cd /app
@@ -140,34 +69,8 @@
         docker compose up -d
       register: compose_result
 
-    # Vänta på att containers ska starta
-    - name: Vänta på att containers ska starta
-      pause:
-        seconds: 15
-
-    # Efter att containers har startats
-    - name: Verifiera Docker miljövariabler
-      shell: |
-        echo "=== Docker container env ==="
-        docker exec tbas_frontend env | grep VITE
-      register: docker_env_debug
-      ignore_errors: yes
-
-    - name: Visa Docker env debug
-      debug:
-        var: docker_env_debug.stdout_lines
-
-    # Debug
-    - name: Verifiera containers
-      shell: |
-        echo "=== Container status ==="
-        docker ps -a
-        echo "=== Container logs ==="
-        docker logs tbas_frontend --tail 50
-        docker logs tbas_backend --tail 50
-      register: container_status
-
-    # Debug
-    - name: Display container status
-      debug:
-        var: container_status.stdout_lines
+    # Starta om containrar med Docker Composer och bygger om det som behövs.
+    # - name: Starta om containrar med Docker Compose
+    #   shell: |
+    #     cd /app
+    #     docker compose up -d
