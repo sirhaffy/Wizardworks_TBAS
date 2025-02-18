@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_AZURE_VM_IP;
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 class APIError extends Error {
@@ -12,7 +12,7 @@ class APIError extends Error {
 const checkEnvironmentVariables = () => {
     const missing = [];
     if (!API_KEY) missing.push('VITE_API_KEY');
-    if (!API_BASE_URL) missing.push('VITE_API_BASE_URL');
+    if (!API_BASE_URL) missing.push('VITE_AZURE_VM_IP');
 
     if (missing.length > 0) {
         console.error('Missing environment variables:', missing);

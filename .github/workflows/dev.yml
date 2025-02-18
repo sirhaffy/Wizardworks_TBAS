@@ -49,6 +49,6 @@ jobs:
       - name: Build Frontend
         working-directory: Frontend
         env:
-          VITE_API_BASE_URL: "/api"
+          VITE_AZURE_VM_IP: "/api"
           API_KEY: "${{ secrets.API_KEY }}"
         run: yarn build
