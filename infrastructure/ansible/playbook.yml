@@ -104,18 +104,18 @@
           copy:
             content: |
               VITE_API_KEY="{{ lookup('env', 'API_KEY') }}"
-              VITE_AZURE_VM_IP="{{ lookup('env', 'AZURE_VM_IP') }}"
+              VITE_BACKEND_URL="http://{{ lookup('env', 'AZURE_VM_IP') }}/api"
             dest: /app/Frontend/.env
             mode: '0600'
 
-        # Debug: Efter Frontend .env steget
-        - name: Verifiera Frontend .env i Docker
+        # Debug: Verifiera .env filerna.
+        - name: Verifiera .env filer
           shell: |
             cd /app
+            echo "=== Root .env innehåll ==="
+            cat .env
             echo "=== Frontend .env innehåll ==="
-            cat Frontend/.env || echo ".env saknas"
-            echo "=== Docker container env ==="
-            docker exec tbas_frontend env | grep VITE
+            cat Frontend/.env
           register: env_debug
 
         - name: Visa env debug
@@ -143,6 +143,18 @@
     - name: Vänta på att containers ska starta
       pause:
         seconds: 15
+
+    # Efter att containers har startats
+    - name: Verifiera Docker miljövariabler
+      shell: |
+        echo "=== Docker container env ==="
+        docker exec tbas_frontend env | grep VITE
+      register: docker_env_debug
+      ignore_errors: yes
+
+    - name: Visa Docker env debug
+      debug:
+        var: docker_env_debug.stdout_lines
 
     # Debug
     - name: Verifiera containers
