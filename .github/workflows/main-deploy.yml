@@ -32,7 +32,7 @@ jobs:
       - name: Build Frontend
         working-directory: Frontend
         env:
-          VITE_AZURE_VM_IP: "http://${{ secrets.AZURE_VM_IP }}/api"
+          VITE_BACKEND_URL: "http://${{ secrets.AZURE_VM_IP }}/api"
           API_KEY: "${{ secrets.API_KEY }}"
         run: |
           yarn install --frozen-lockfile

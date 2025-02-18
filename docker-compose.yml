@@ -45,10 +45,10 @@ services:
       dockerfile: Frontend/Dockerfile
       args:
         - VITE_API_KEY=${API_KEY}
-        - VITE_AZURE_VM_URL=http://${AZURE_VM_IP}/api
+        - VITE_BACKEND_URL=http://${AZURE_VM_IP}/api
     environment:
       - VITE_API_KEY=${API_KEY}
-      - VITE_AZURE_VM_URL=http://${AZURE_VM_IP}/api
+      - VITE_BACKEND_URL=http://${AZURE_VM_IP}/api
     ports:
       - "80:80"
     depends_on:
