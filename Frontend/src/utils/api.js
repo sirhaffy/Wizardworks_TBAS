@@ -1,7 +1,5 @@
 const API_KEY =  import.meta.env.VITE_API_KEY;
-const BASE_URL = import.meta.env.MODE === 'development'
-    ? 'http://localhost:5129/api'
-    : `http://${import.meta.env.AZURE_VM_IP}/api`;
+const BASE_URL = import.meta.env.VITE_AZURE_VM_IP;
 
 class APIError extends Error {
     constructor(message, status = null) {
@@ -30,7 +28,7 @@ const checkEnvironmentVariables = () => {
 
 const checkBackendStatus = async () => {
     try {
-        const response = await fetch(`${BASE_URL}/rectangle`, {
+        const response = await fetch(`${BASE_URL}/api/rectangle`, {
             mode: 'cors',
             headers: {
                 'Accept': 'application/json',

@@ -44,10 +44,11 @@ services:
       context: .
       dockerfile: Frontend/Dockerfile
       args:
-        # - VITE_API_KEY=${API_KEY} # Needs to be called VITE to be picked up by Vite.
-        # - VITE_AZURE_VM_IP=${AZURE_VM_IP} # Needs to be called VITE to be picked up by Vite.
-        - API_KEY=${API_KEY}
-        - AZURE_VM_IP=${AZURE_VM_IP}
+        - VITE_API_KEY=${API_KEY}
+        - VITE_AZURE_VM_IP=${AZURE_VM_IP}
+    environment:
+      - VITE_API_KEY=${API_KEY}
+      - VITE_AZURE_VM_IP=${AZURE_VM_IP}
     ports:
       - "80:80"
     depends_on:

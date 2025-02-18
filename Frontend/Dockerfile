@@ -14,8 +14,8 @@ RUN yarn install --frozen-lockfile
 COPY Frontend ./
 
 # Build the application with environment variables
-ENV VITE_API_KEY=${API_KEY}
-ENV VITE_AZURE_VM_IP=${AZURE_VM_IP}
+ENV VITE_API_KEY=$VITE_API_KEY
+ENV VITE_AZURE_VM_IP=$VITE_AZURE_VM_IP
 RUN yarn build
 
 # Production image
