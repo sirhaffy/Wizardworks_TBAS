@@ -9,8 +9,6 @@ namespace Backend.Services;
     private readonly ILogger<MongoService> _logger;
     private readonly MongoClient _client;
     
-    private const string DatabaseNameKey = "MongoDB:DatabaseName";
-
     public MongoService(IConfiguration config, ILogger<MongoService> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
