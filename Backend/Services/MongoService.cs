@@ -43,10 +43,6 @@ namespace Backend.Services;
             _client = new MongoClient(settings);
             _database = _client.GetDatabase(databaseName);
 
-            // Testa anslutningen
-            var pingCommand = new MongoDB.Bson.BsonDocument("ping", 1);
-            var pingResult = _database.RunCommand<MongoDB.Bson.BsonDocument>(pingCommand);
-
             _logger.LogInformation("Successfully connected to MongoDB and verified connection");
         }
         catch (MongoConnectionException ex)
