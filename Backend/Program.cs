@@ -103,7 +103,11 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
     // Authentication
     services.AddAuthentication("ApiKey")
-        .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>("ApiKey", null);
+        .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>("ApiKey", options =>
+        {
+            options.TimeProvider = TimeProvider.System;
+        });
+
 
     // Application Services
     services.AddSingleton<IMongoService, MongoService>();

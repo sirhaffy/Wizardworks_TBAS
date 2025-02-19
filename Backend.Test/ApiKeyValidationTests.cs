@@ -10,7 +10,7 @@ using Moq;
 
 namespace BackendTest;
 
-public class ApiKeyValidationTests 
+public class ApiKeyValidationTests
 {
     private readonly Mock<IConfiguration> _mockConfiguration;
     private readonly ApiKeyAuthenticationHandler _handler;
@@ -29,7 +29,7 @@ public class ApiKeyValidationTests
 
         _httpContext = CreateHttpContext(services);
         _handler = CreateAuthenticationHandler();
-        
+
         // Initialize the handler
         InitializeHandler().Wait();
     }
@@ -38,20 +38,20 @@ public class ApiKeyValidationTests
     [InlineData(TestApiKey, true, "ApiUser", null)]
     [InlineData("wrong-api-key", false, null, "Invalid API Key")]
     public async Task AuthenticateAsync_ReturnsExpectedResult(
-        string configuredApiKey, 
-        bool expectedSuccess, 
-        string? expectedUserName, 
+        string configuredApiKey,
+        bool expectedSuccess,
+        string? expectedUserName,
         string? expectedErrorMessage)
     {
         // Arrange
-        _mockConfiguration.Setup(c => c["ApiKey"]).Returns(configuredApiKey);
+        _mockConfiguration.Setup(c => c["API_KEY"]).Returns(configuredApiKey);
 
         // Act
         var result = await InvokeHandleAuthenticateAsync();
 
         // Assert
         Assert.Equal(expectedSuccess, result.Succeeded);
-        
+
         if (expectedSuccess)
         {
             Assert.NotNull(result.Principal);
@@ -80,21 +80,15 @@ public class ApiKeyValidationTests
         mockOptions.Setup(x => x.CurrentValue).Returns(new AuthenticationSchemeOptions());
         mockOptions.Setup(x => x.Get(It.IsAny<string>())).Returns(new AuthenticationSchemeOptions());
 
-        var mockLogger = new Mock<ILogger<ApiKeyAuthenticationHandler>>();
         var loggerFactory = new Mock<ILoggerFactory>();
-        loggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>()))
-            .Returns(mockLogger.Object);
-
-        var mockClock = new Mock<ISystemClock>();
-        mockClock.Setup(x => x.UtcNow).Returns(DateTimeOffset.UtcNow);
 
         return new ApiKeyAuthenticationHandler(
             mockOptions.Object,
             loggerFactory.Object,
             UrlEncoder.Default,
-            mockClock.Object,
             _mockConfiguration.Object);
     }
+
 
     private async Task InitializeHandler()
     {

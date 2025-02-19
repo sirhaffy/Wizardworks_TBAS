@@ -3,6 +3,7 @@ using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 
+
 namespace Backend.Controller;
 
 public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
@@ -10,17 +11,17 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationS
     private const string ApiKeyHeaderName = "X-API-Key";
     private readonly IConfiguration _configuration;
 
-    [Obsolete("Obsolete")]
     public ApiKeyAuthenticationHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
-        ISystemClock clock,
         IConfiguration configuration)
-        : base(options, logger, encoder, clock)
+        : base(options, logger, encoder)
     {
         _configuration = configuration;
     }
+
+
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
