@@ -8,10 +8,23 @@ namespace Backend.Services;
     private readonly IMongoDatabase _database;
     private readonly ILogger<MongoService> _logger;
     private readonly MongoClient _client;
+    
+    private const string DatabaseNameKey = "MongoDB:DatabaseName";
 
     public MongoService(IConfiguration config, ILogger<MongoService> logger)
     {
-        _logger = logger;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        if (config == null)
+            throw new ArgumentNullException(nameof(config));
+
+        var connectionString = config.GetSection("MongoDB:ConnectionString")?.Value;
+        if (string.IsNullOrEmpty(connectionString))
+            throw new ArgumentNullException("connectionString");
+
+        var databaseName = config.GetSection("MongoDB:DatabaseName")?.Value;
+        if (string.IsNullOrEmpty(databaseName))
+            throw new ArgumentNullException("databaseName");
+        
         try
         {
             // Hämta host från miljövariabel
@@ -21,9 +34,8 @@ namespace Backend.Services;
             // Hämta användarnamn och lösenord från config eller miljövariabler
             var user = Environment.GetEnvironmentVariable("MONGODB_USER") ?? "appuser";
             var password = Environment.GetEnvironmentVariable("MONGODB_PASSWORD") ?? "apppassword";
-            var databaseName = config.GetValue<string>("MongoDB:DatabaseName") ?? "tbas_db";
 
-            var connectionString = $"mongodb://{user}:{password}@{host}:27017/{databaseName}?authSource=admin";
+            // var connectionString = $"mongodb://{user}:{password}@{host}:27017/{databaseName}?authSource=admin";
 
             _logger.LogInformation("Attempting to connect to MongoDB...");
             _logger.LogInformation("Using database: {DatabaseName}", databaseName);
@@ -51,6 +63,9 @@ namespace Backend.Services;
         }
         catch (Exception ex)
         {
+            if (ex is ArgumentNullException)
+                throw;
+            
             _logger.LogError(ex, "Unexpected error while connecting to MongoDB");
             throw new Exception("An unexpected error occurred while connecting to MongoDB.", ex);
         }
