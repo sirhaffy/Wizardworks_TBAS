@@ -7,14 +7,14 @@ using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Ladda ../.env i utvecklingsmiljö
+// Load .env file in development
 if (builder.Environment.IsDevelopment())
 {
     var envPath = Path.Combine(builder.Environment.ContentRootPath, "..", ".env");
     if (File.Exists(envPath))
     {
-        Env.Load(envPath);
-        builder.Configuration.AddEnvironmentVariables();
+        Env.Load(envPath); // Load .env variables into Environment
+        builder.Configuration.AddEnvironmentVariables(); // Load .env variables into Configuration
     }
     else
     {
@@ -22,7 +22,7 @@ if (builder.Environment.IsDevelopment())
     }
 }
 
-// I production används GitHub Secrets via environment variables
+// Load environment variables in production
 if (builder.Environment.IsProduction())
 {
     builder.Configuration.AddEnvironmentVariables();

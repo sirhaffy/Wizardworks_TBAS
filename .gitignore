@@ -5,7 +5,8 @@
 .secrets
 .env.local
 .env
-playbook.backup.yml
+*.env.local
+*.env
 
 ### react ###
 .DS_*

@@ -30,7 +30,8 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationS
         }
 
         var providedApiKey = apiKeyHeaderValues.FirstOrDefault();
-        var apiKey = _configuration["ApiKey"];
+        var apiKey = _configuration["API_KEY"];
+
 
         if (apiKey != providedApiKey)
         {
